@@ -8,6 +8,11 @@ from ij.measure import Measurements, ResultsTable
 from ij.plugin.filter import Analyzer
 
 # Image directory
+
+folder_path = '/Users/ceciliaacosta/Desktop/data_Viri/FIJI/train+model_Viri/integrated/IntDensity'  # Replace . with your desired folder path
+if not os.path.exists(folder_path):
+    os.makedirs(folder_path)
+    
 image_dir = "/Users/ceciliaacosta/Desktop/data_Viri/FIJI/train+model_Viri/integrated/images/"  # Replace with the directory containing the images
 image_files = sorted([file_name for file_name in os.listdir(image_dir) if file_name.endswith(".png")])
 
@@ -20,7 +25,8 @@ for image_file in image_files:
         imp.show()
 
 
-        # Open text file
+        # Open text file that contains the outlines (_outlines.txt output from cellpose) 
+        
         text_file_dir = "/Users/ceciliaacosta/Desktop/data_Viri/FIJI/train+model_Viri/integrated/outlines/"  # Replace with the directory containing the text files
         text_file_prefix = image_file[:-4]  # Remove the ".tif" extension from the image file name
         text_file_suffix = "_cp_outlines.txt"  # Suffix to match the text file names
@@ -48,12 +54,13 @@ for image_file in image_files:
             textfile.close()
             rm.runCommand("Associate", "true")
             rm.runCommand("Show All with labels")
+            
             # Measure data from ROIs
             rm.runCommand(imp, "Measure")
             # Get the measurement results from the RoiManager
             rt = ResultsTable.getResultsTable()
 			
-            results_dir = "/Users/ceciliaacosta/Desktop/data_Viri/FIJI/train+model_Viri/integrated/results/"  # Replace with the directory to save the results
+            results_dir = folder_path+"/"  # Replace with the directory to save the results
             results_file = image_file.replace(".png", ".csv")  # Assuming results file names correspond to image names
             results_path = os.path.join(results_dir, results_file)
             
