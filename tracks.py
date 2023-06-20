@@ -14,11 +14,7 @@ import re
 
 #pixel=int(input("Enter pixel size in nanometer:"))
 analysis= input(("Enter B if you want to analyse TracksBound only. Enter L if you want to analyse TracksLifetime only. Enter BL if you want to analyse BOTH:"))
-rows_to_add=[]
 header=["Cell_ID","Track_IDs", "spt_tr", "spt_widt", "mean_sp", "max_sp", "min_sp", "med_sp", "std_sp", "mean_q", "max_q_tr", "min_q_tr", "med_q_tr", "std_q_tr", "tr_dur", "tr_start", "tr_fin", "x_lc", "y_lc"]
-
-
-
 
 
 def point_in_poly(x, y, poly):
@@ -45,29 +41,34 @@ def point_in_poly(x, y, poly):
 
 def fn(outlines, extracted_data):
     extracted_df = pd.DataFrame(extracted_data)
-    #print(extracted_df)
+    rows_to_add=[]
+
+    print("len of df", len(extracted_df))
     for i in range (len(outlines)):
         
         poly=outlines[i]
         print(i)
       
-        for j in range ( len(extracted_data)):
+        for j in range ( len(extracted_df)):
 #MAKE SURE TO FIRST OPEN THE RESULTS DATA TO SEE HOW THE COLUMNS WERE SAVED (sometimes FIJI saves the results with one extra empty column at the beginning)
             x=extracted_data[j][16] #CHANGE THIS SO THE COLUMN IS ALIGNED WITH X_(px)
             y=extracted_data[j][17]    #CHANGE THIS SO THE COLUMN IS ALIGNED WITH Y_(px)
-            #print(x, y)
+
             if point_in_poly(x,y,poly): 
-                #print("inside")
-       
+              
+    
                 row_data = extracted_df.iloc[j].values
-                row_data= np.insert(row_data, 0, i )
-                rows_to_add.append(row_data)
+    
+                row= np.append(row_data, i)
+               
+                rows_to_add.append(row)
+
     return rows_to_add
                     
 def main(folderTrack, folderSeg):
     boL= False
     boB=False
-    boS=False
+
     files=[]
     j=0
 
@@ -100,7 +101,7 @@ def main(folderTrack, folderSeg):
 
             tr= os.path.join(folderTrack, filename)
             tracksL= np.genfromtxt(tr, delimiter=',', skip_header=0)
-   
+       
             f2=filename
             boL=True
             file_pathL = os.path.join(folderTrack, "trim2"+filename)
@@ -112,15 +113,14 @@ def main(folderTrack, folderSeg):
             dfB.to_csv(file_pathB, index=False, header=False, sep=',')
 
             boB=False
-            boS=False
+  
  
         elif (boL and analysis=="L"):
             j+=1
             dfL = pd.DataFrame(fn(outlines, tracksL))
             #dfL.columns=header
             dfL.to_csv(file_pathL, index=False, header=False, sep=',')
-
-            boS=False
+     
             boL=False
 
         elif (boB and boL and analysis=="BL"):
@@ -130,21 +130,14 @@ def main(folderTrack, folderSeg):
             f2= re.sub('tracksDiffusive.csv$', '', f2)
             print(f1, f2)
             if f1==f2: 
-            
-
+        
                 dfB = pd.DataFrame(fn(outlines, tracksB))
-       
                 dfL = pd.DataFrame(fn(outlines, tracksL))
-         
-
-                #dfB.columns=header
-                #dfL.columns=header
 
                 dfB.to_csv(file_pathB, index=True, header=False, sep='\t')
                 dfL.to_csv(file_pathL, index=True, header=False, sep='\t')
 
                 boB=False
-       
                 boL=False
             else: 
                 continue 
