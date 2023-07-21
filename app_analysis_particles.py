@@ -175,7 +175,7 @@ def table_creation(data, header, outlines, size, min):
             continue
 
 
-    return table, counts, average, one, two, three, four, coloc, rel_dist, cellnum
+    return table, counts, one, two, three, four, coloc, rel_dist, cellnum
 
 
 def counts_histogram(total_1, total_2):
@@ -217,7 +217,6 @@ def counts_histogram(total_1, total_2):
         plt.gca().yaxis.set_major_formatter(PercentFormatter(1))
         plt.legend(loc="upper right")
         plt.savefig(str(results_folder_path)+'/Counts.png')
-        plt.show()
 
 
 def size_histogram(one, two, three, four, chan, total):
@@ -244,7 +243,6 @@ def size_histogram(one, two, three, four, chan, total):
     plt.gca().yaxis.set_major_formatter(PercentFormatter(1))
     plt.legend(loc="upper right")
     plt.savefig(str(results_folder_path)+"/"+str(chan)+'Cell_size.png')
-    plt.show()
 
 
 def coloc_histogram(data, tot_channel, title, pix, channel):
@@ -279,7 +277,6 @@ def coloc_histogram(data, tot_channel, title, pix, channel):
 
     plt.legend(loc="upper right")
     plt.savefig(str(results_folder_path)+'/Colocalization.png')
-    plt.show()
 
 
 def distance_histogram(data, total, channel):
@@ -307,7 +304,6 @@ def distance_histogram(data, total, channel):
     plt.legend(loc="upper right")
     # show the plot
     plt.savefig(str(results_folder_path)+"/"+'chan'+str(channel)+'Distance.png')
-    plt.show()
 
 
 def coloc_size(dict_size, tot1, tot2, tot3, tot4, pixel, channel): 
@@ -332,7 +328,7 @@ def coloc_size(dict_size, tot1, tot2, tot3, tot4, pixel, channel):
             "3.6 to 4.4 microns", "4.4 and above microns"]
     lili=-1
     for sublist in data:
-      
+        plt.figure()
         lili+=1
         # Multiply weights by 100
         heights = [weight * 100 for weight in sublist]
@@ -349,7 +345,7 @@ def coloc_size(dict_size, tot1, tot2, tot3, tot4, pixel, channel):
         plt.ylabel('Colocalization rate')
         plt.title(sizes[data.index(sublist)])
         plt.savefig(str(results_folder_path)+'/'+'coloc_per_size'+str(sizes[lili])+'chan'+str(channel)+'.png')
-        plt.show()
+
 
 
 def integrated_intensity(folder_integrated):
@@ -551,16 +547,38 @@ def main1(directory_seg, directory_res, Coloc_bysize , folder_integrated, parame
             number_of_cells += len(outlines)
 
             # input channel 1 CHANGE COMMA OR TAB IF NEEDED
-            fiji_1 = np.genfromtxt(files[2*i], delimiter='\t', skip_header=1)
-            header = np.genfromtxt(files[2 * i], delimiter='\t', dtype=str, max_rows=1)
+            #fiji_1 = np.genfromtxt(files[2*i], delimiter='\t', skip_header=1)
+            #header = np.genfromtxt(files[2 * i], delimiter='\t', dtype=str, max_rows=1)
             # input channel 2 CHANGE COMMA OR TAB IF NEEDED
-            fiji_2 = np.genfromtxt(files[2*i+1], delimiter='\t', skip_header=1)
+            #fiji_2 = np.genfromtxt(files[2*i+1], delimiter='\t', skip_header=1)
+
+            with open(files[2*i], 'r', newline='') as file:
+                file_content = file.read().splitlines()
+            
+                
+            fiji_1= np.genfromtxt(file_content[1:], delimiter='\t')   # input channel 1
+            if fiji_1.ndim==1: 
+                fiji_1 = fiji_1.reshape(1, -1)
+                #print("changed it to an arrray of dim", fiji_1.shape)
+
+            header = np.genfromtxt([file_content[0]], delimiter='\t', dtype=str)
+
+            with open(files[2*i+1], 'r', newline='') as file2:
+                file_content2 = file2.read().splitlines()
+            
+                
+            fiji_2= np.genfromtxt(file_content2[1:], delimiter='\t')   # input channel 1
+            if fiji_2.ndim==1: 
+                fiji_2 = fiji_2.reshape(1, -1)
+                #print("changed it to an arrray of dim", fiji_2.shape)
+
+
             i += 1
 
-            table_1, counts_1, average_1, one, two, three, four, coloc, distance, cellnum1 = table_creation(
+            table_1, counts_1, one, two, three, four, coloc, distance, cellnum1 = table_creation(
                 fiji_1,header, outlines, pixel, too_small)
 
-            table_2, counts_2, average_2, one2, two2, three2, four2, coloc2, distance2, cellnum2 = table_creation(
+            table_2, counts_2, one2, two2, three2, four2, coloc2, distance2, cellnum2 = table_creation(
                 fiji_2,header, outlines, pixel, too_small)  # channel 2
 
 
@@ -744,6 +762,7 @@ class App:
         self.folder_integrated=None
         self.checkbox_values = {}
         self.parameters = {}
+        self.channel=0
 
         # Welcome message
         self.message_label = tk.Label(self.root, text="Welcome! Before starting make sure your segmentations are valid and that your particle detection is good! Make sure that you have a folder of _seg.npy files only and one for the output of particle_detections.ijm script!")
@@ -829,6 +848,12 @@ class App:
         self.question2_var.set(True)
     def update_question1_var(self):
         self.question1_var.set(True)
+    
+    
+    def update_q2_var(self):
+        self.q2_var.set(True)
+    def update_q1_var(self):
+        self.q1_var.set(True)
 
     def select_analysis(self):
   
@@ -866,56 +891,56 @@ class App:
         self.checkbox_values['Integrated'] = self.question1_var.get()
        
         self.checkbox_values["Coloc"] = self.question2_var.get()
-        
+    
 
         if self.checkbox_values["Coloc"]:
+        
 
         # New Window for questions about colocalization
-            self.questions_window.destroy()
             self.colc_window=tk.Tk()
             self.colc_window.title("Colocalization customization")
 
         # Questions with Yes/No options
             self.q1_label = tk.Label(self.colc_window, text="Additionally, would you like the colocalization rate based on cell size category?")
             self.q1_label.pack()
-            self.q1_var = tk.StringVar()
-            
-            self.q1_yes= tk.Radiobutton(self.colc_window, text="Yes", variable=self.q1_var, value="Yes", command=lambda: self.coloc_param)
+            self.q1_var = tk.BooleanVar()
+            self.q1_var.set(False)
+            self.q1_yes= tk.Radiobutton(self.colc_window, text="Yes", variable=self.q1_var, value=True, command= self.update_q1_var)
             self.q1_yes.pack()
-            self.q1_no= tk.Radiobutton(self.colc_window, text="No", variable=self.q1_var, value="No",  command=lambda: self.coloc_param)
+            self.q1_no= tk.Radiobutton(self.colc_window, text="No", variable=self.q1_var, value=False)
             self.q1_no.pack()
             
             self.q2_label = tk.Label(self.colc_window, text="Which Channel do you want to colocalization be based on?")
             self.q2_label.pack()
-            self.q2_var = tk.IntVar()
-
-            self.q2_chan1 = tk.Radiobutton(self.colc_window, text="Channel 1", variable=self.q2_var,  command=lambda: self.coloc_param, value=1)
+            self.q2_var = tk.BooleanVar()
+            self.q2_var.set(False)
+            self.q2_chan1 = tk.Radiobutton(self.colc_window, text="Channel 1", variable=self.q2_var,  value=True, command=self.update_q2_var)
             self.q2_chan1.pack()
-            self.q2_chan2 = tk.Radiobutton(self.colc_window, text="Channel 2", variable=self.q2_var, command=lambda: self.coloc_param, value=2)
+            self.q2_chan2 = tk.Radiobutton(self.colc_window, text="Channel 2", variable=self.q2_var, value=False)
             self.q2_chan2.pack()
 
             # Submit button
             self.submit_button = tk.Button(self.colc_window, text="Submit", command=self.coloc_param)
             self.submit_button.pack()
-     
+    
         else:
             self.questions_window.destroy()
             self.parameters_entry()
-            
-       
 
     def coloc_param(self):
-        
+    
         self.checkbox_values['coloc_size']=self.q1_var.get()
-
+        
         self.checkbox_values['channel']=self.q2_var.get()
   
         self.parameters_entry()
-        self.colc_window.destroy()
+      
 
     def parameters_entry(self):
 
         # New window for parameter input
+        self.questions_window.destroy()
+        self.colc_window.destroy()
         self.parameter_window = tk.Tk()
         self.parameter_window.title("Parameter Input")
 
@@ -977,12 +1002,17 @@ class App:
     def run(self):
         self.root.mainloop()
         if self.checkbox_values["Coloc"]:
-            if self.checkbox_values['coloc_size']=="Yes": 
+            if self.checkbox_values['coloc_size']: 
+                print("ENTERED IN THE FIRST COLOC SIZE CONDITION")
+                if self.checkbox_values['channel']:
+                    self.channel=1
+                else:
+                    self.channel=2
                 messagebox.showinfo("Analysis", "You have two color channels. Output: Cells Length Distribution, Particle's Relative Distance from the Center, Counts of Particles per Cell, Colocalization, Colocalization per cell length size ")
-                main1(self.directory_seg, self.directory_res, True, self.folder_integrated, self.parameters, self.checkbox_values['channel'], self.selected_folder_path)
+                main1(self.directory_seg, self.directory_res, True, self.folder_integrated, self.parameters, self.channel, self.selected_folder_path)
             else:
                 messagebox.showinfo("Analysis", "You have two color channels. Output: Cells Length Distribution, Particle's Relative Distance from the Center, Counts of Particles per Cell, Colocalization")
-                main1(self.directory_seg, self.directory_res, False, self.folder_integrated, self.parameters,self.checkbox_values['channel'], self.selected_folder_path)
+                main1(self.directory_seg, self.directory_res, False, self.folder_integrated, self.parameters,self.channel, self.selected_folder_path)
         else:
             messagebox.showinfo("Analysis", "You have one color channel, Output: Cells Length Distribution, Particle's Relative Distance from the Center and Counts of Particles per Cell")
             main2(self.directory_seg, self.directory_res, self.folder_integrated, self.parameters, self.selected_folder_path)
