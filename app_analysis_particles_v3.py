@@ -330,8 +330,20 @@ def coloc_integrated_plot(filename):
     if np.isnan(min_value) or np.isnan(max_value) or min_value > max_value:
         print("Invalid min or max values. Cannot create bin edges.")
     else:
-        bin_edges = np.arange(start=np.floor(min_value), stop=np.ceil(max_value) + 10, step=2000)
-        
+    # Define the number of quantiles
+        num_quantiles = 50  # This will create 10 quantile bins
+
+        # Use np.linspace to create evenly spaced quantiles between 0 and 1
+        quantiles = np.linspace(0, 1, num_quantiles + 1)
+
+        # Use np.quantile to find the bin edges based on the quantiles
+        bin_edges = np.quantile(big_df['IntegratedIntensity'], quantiles)
+            # Remove non-unique edges
+        bin_edges = np.unique(bin_edges)
+
+        if len(bin_edges) < 2:
+            print("Not enough unique bin edges available after removing duplicates.")
+            return
 
     # Use pd.cut to bin the data
     big_df['bins'] = pd.cut(big_df['IntegratedIntensity'], bins=bin_edges)
@@ -350,6 +362,7 @@ def coloc_integrated_plot(filename):
 
     # Set the labels for the primary axis
     ax1.set_xlabel('Integrated Intensity Bins')
+    
     ax1.set_ylabel('Ratio of Colocalization', color='blue')
     ax1.tick_params(axis='y', labelcolor='blue')
 
@@ -601,9 +614,10 @@ def table_creation(data, header, outlines, size, min):
                 x = data[j][col_x]
                 # CHANGE THIS SO THE COLUMN IS ALIGNED WITH Y_(px)
                 y = data[j][col_y]
-                coord = [x, y]
+       
 
-                if point_in_poly(x, y, poly):  # if particle inside the cell segmentation
+                if point_in_poly(x, y, poly):
+                    coord = [x, y]  # if particle inside the cell segmentation
 
                     distance = math.sqrt((y-center[1])**2+(x-center[0])**2)
                     rel_dist.append(distance/(lenght/2))
@@ -674,7 +688,7 @@ def table_creation(data, header, outlines, size, min):
                     continue
         else:
             continue
-
+    print(z)
     return table, counts, one, two, three, four, five, six, coloc, rel_dist, cellnum
 
 
@@ -713,6 +727,7 @@ def colocalization(Input_chan, other_chan, pixel_dist, channel):
 
     for key1 in Input_chan.keys():  # iterates through all the cells of the image
 
+
         if (len(Input_chan[key1]) != 0 and len(other_chan[key1]) != 0):
 
             for j,can1 in enumerate(Input_chan[key1]):
@@ -723,27 +738,28 @@ def colocalization(Input_chan, other_chan, pixel_dist, channel):
                     for y, can2 in enumerate(other_chan[key1]):
 
                         allowed, dist = allowed_dist(
-                            can1, can2, pixel_dist)
+                            Input_chan[key1][j],other_chan[key1][y] , pixel_dist)
 
                         if allowed and dist <= smallest_dist:
                             smallest_dist = dist
+                            candidate = y
                             boo = True
                         else:
                             continue
 
                     if boo:
-                        del other_chan[key1][y]
+                        del other_chan[key1][candidate]
                         # add to the dictionary the number of colocalizations per cell
-
+                        result += 1
                         if channel==1:
                             cols_in_each_cellIDchan1[key1][j+1] +=1
                         else:
                             cols_in_each_cellIDchan2[key1][y+1] +=1
-                        result += 1
                         
                     boo = False
                 else:
                     continue
+    print(result )
 
     return result, cols_in_each_cellIDchan1, cols_in_each_cellIDchan2
 
@@ -960,10 +976,16 @@ def main1(directory_seg, directory_res, Coloc_bysize , folder_integrated, parame
 # ----------------- COLOCALIZATION-------------------------
 
             for pixx in new_dict.keys(): #iterate through the different distances of colocalization
-
-                inco = copy.deepcopy(coloc)
-                othco = copy.deepcopy(coloc2)
-                rate, dict1_cel_ID, dict2_cel_ID = colocalization(inco, othco, pixx, channel)
+                if channel==1:
+                    inco = copy.deepcopy(coloc)
+                    othco = copy.deepcopy(coloc2)
+                    rate, dict1_cel_ID, dict2_cel_ID = colocalization(inco, othco, pixx, channel)
+                    new_dict[pixx] += rate
+                else: 
+                    inco = copy.deepcopy(coloc2)
+                    othco = copy.deepcopy(coloc)
+                    rate, dict1_cel_ID, dict2_cel_ID = colocalization(inco, othco, pixx, channel)
+                    new_dict[pixx] += rate
 
                 if pixx == 2:  #we track colocalisation for each particle at a distance of 2 pixels (130 nm)
                     print('here')
@@ -979,15 +1001,13 @@ def main1(directory_seg, directory_res, Coloc_bysize , folder_integrated, parame
                         df1['coloc'] = df1['coloc'].fillna(0)
             
                     else:
-                        for key2 in dict1_cel_ID.keys():
+                        for key2 in dict2_cel_ID.keys():
             
                             condition1 = df2['cell_id'] == key2
                             for id in dict2_cel_ID[key2].keys():
                                 condition2 = df2['part_id'] == id
                                 df2.loc[condition1 & condition2, 'coloc'] = dict2_cel_ID[key2][id]
                         df2['coloc'] = df2['coloc'].fillna(0)
-
-                new_dict[pixx] += rate
 
             for key in new_dict.keys():   # for loop for size colocalization
 
