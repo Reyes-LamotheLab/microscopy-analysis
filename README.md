@@ -1,15 +1,22 @@
-# microscopy-analysis
-## Description of each script
-### particles_detection.ijm
-  - This file does particle detection that can be customized for each channel. Then is outputs either a csv or a txt file of the Results created by running the ComDet pluggin from FIJI and saves the results in a folder. 
-  - Make sure to open the results and identify how many columns there are since it is important for the Analysis_with_seg_user code
-### integrated_intensity.py
-  - This file will use the output of the segmentation done by Cellpose as well as the TIF images in Fiji to be able to give us the Integrated intensity of each cell for images and then outputs a result file as csv format for each image.
-### Cellpose scripts to do cell segmentation
+# Steps to have an almost complete analysis of particles in your Bacteria!
+
+## First: Do cell segmentation using Cellpose and particle detection using FIJI
+
+### **1.1** Particles detection script: <u>particles_detection.ijm</u>
+  - This file does particle detection that can be customized for each channel. Then it outputs either a csv or a txt file of the Results created by running the ComDet pluggin from FIJI and saves the results in a folder. 
+### **1.2** Cellpose scripts to do cell segmentation:
+**Attention**: Make sure you have Cellpose installed on your computer 
+If you already have your trained segmentation model and you know how Cellpose works go to b) directly.
+
+####  a) Install CellPose and learn how to annotate your images manually on CellPose GUI:
+- Follow this [link](https://github.com/MouseLand/cellpose/tree/main) for documentation on Cellpose
+- Follow this [video](https://www.youtube.com/watch?v=3Y1VKcxjNy4) to understand how to use the GUI!
+#### b) Either use the default or custom trained model, or train a new model:
   - Cellpose_Train_Model.ipynb
-    - use it to train a custom model for your microscopy images of cells if the base models provided by them do not segment well
+    - Use it to train a custom model for your microscopy images of cells if the default base models provided by CellPose do not segment well.
   - Cellpose_Use_CustomModel.ipynb
-    - use it to segment your images (png, tig, jpeg). It will output the segmentations as _seg.npy files which you need to have to do the analysis of particles in cells
+    - Change the parameters: `diameter` and `model_type` 
+    - Use it to segment your images (png, tig, jpeg). It will output the segmentations as _seg.npy files which you need to have to do the analysis of particles in cells (use the app_analysis particles.py).
 ### app_analysis_particles.py 
 **Attention:** This can be used ONLY after you ran <u>`particles_detection.ijm`</u> and <u>`Cellpose_Use_CustomModel.ipynb`</u> since it relies on their output.
   - Use this analysis script to ouput a table per image analyse and histograms that can be useful such as the following:
@@ -21,8 +28,10 @@
     - Comparison of the Ratio of Colocalization and the Total Number of Particles against the Integrated Intensity
 
 - You can also use the output of ***`integrated_intensity.py`*** to get a swarm plot of the integrated intensities for all cells of multiple images
-
-### Output example
+### integrated_intensity.py
+  - This file will use the output of the segmentation done by Cellpose as well as the TIF images in Fiji to be able to give us the Integrated intensity of each cell for images and then outputs a result file as csv format for each image.
+    
+## Output example
 
 - ***Histograms created by the app***
 ![My project-1](https://github.com/Reyes-LamotheLab/microscopy-analysis/assets/83682336/fec1c7eb-dec2-4217-8be1-cdf02b20eed8)
