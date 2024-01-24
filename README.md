@@ -12,14 +12,16 @@
     - use it to segment your images (png, tig, jpeg). It will output the segmentations as _seg.npy files which you need to have to do the analysis of particles in cells
 ### app_analysis_particles.py 
   - Use this analysis script to ouput a table per image analyse and histograms that can be useful such as the following:
-  - This can be used ONLY after you ran ***`particles_detection.ijm`*** and ***`Cellpose_Use_CustomModel.ipynb`*** since it relies on their output.
-  - You can also use the output of ***`integrated_intensity.py`*** to get a swarm plot of the integrated intensities for all cells of multiple images
     - Cells Length Distribution
     - Particle's Relative Distance from the Center of the Cell 
     - Counts of Particles per Cell
     - Colocalization for any Channel
     - Colocalization per Cell Length for any Channel
-   
+    - Comparison of the Ratio of Colocalization and the Total Number of Particles against the Integrated Intensity 
+    **This can be used ONLY after you ran <u>`particles_detection.ijm`<\u> and <u>`Cellpose_Use_CustomModel.ipynb`<\u> since it relies on their output.**
+
+- You can also use the output of ***`integrated_intensity.py`*** to get a swarm plot of the integrated intensities for all cells of multiple images
+
 ### Output example
 
 - ***Histograms created by the app***
