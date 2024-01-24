@@ -5,7 +5,7 @@
   - Make sure to open the results and identify how many columns there are since it is important for the Analysis_with_seg_user code
 ### integrated_intensity.py
   - This file will use the output of the segmentation done by Cellpose as well as the TIF images in Fiji to be able to give us the Integrated intensity of each cell for images and then outputs a result file as csv format for each image.
-### Cellpose scripts to segment 
+### Cellpose scripts to do cell segmentation
   - Cellpose_Train_Model.ipynb
     - use it to train a custom model for your microscopy images of cells if the base models provided by them do not segment well
   - Cellpose_Use_CustomModel.ipynb
