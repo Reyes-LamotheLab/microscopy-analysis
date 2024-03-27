@@ -1,6 +1,9 @@
 import json
-from analysis_non_app import *  # Import all functions from your analysis functions file
+from analysis_non_app import main1
 
+import os
+print(os.path.abspath('analysis_non_app.py'))
+print(os.path.abspath('run_multiple_analysis.py'))
 # Load configuration
 with open('config.json', 'r') as config_file:
     config = json.load(config_file)
@@ -11,7 +14,7 @@ def run_analysis(analysis_name, params, output_folder):
     """
     # Example function call - replace with actual function calls as needed
     
-    main1(directory_seg, directory_res, Coloc_bysize , folder_integrated, parameter, channel, selected_folder_path): 
+    main1(directory_seg, directory_res, Coloc_bysize , folder_integrated, parameter, channel, selected_folder_path)
     # Assuming your function accepts keyword arguments
     # Save result to the specified output folder
     # This could involve saving files, plots, etc.
