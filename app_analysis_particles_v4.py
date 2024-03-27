@@ -1047,26 +1047,27 @@ def main1(directory_seg, directory_res, Coloc_bysize , folder_integrated, parame
                     new_dict[pixx] += rate
 
                 if pixx == 2:  #we track colocalisation for each particle at a distance of 2 pixels (130 nm, if the pixel size is 65 nm)
-                    print('here')
+                    
                     if channel == 1:
-                        print('here1')
+        
+                        # create a new column in the dataframe to store the colocalization rate
+             
 
                         for key1 in dict1_cel_ID.keys():
-
+                            df1['coloc'] = 0
                             condition1 = df1['cell_id'] == key1
-                            for id in dict1_cel_ID[key1].keys():
+                            for id  in dict1_cel_ID[key1].keys():
                                 condition2 = df1['part_id'] == id
                                 df1.loc[condition1 & condition2, 'coloc'] = dict1_cel_ID[key1][id]
-                        df1['coloc'] = df1['coloc'].fillna(0)
+
             
                     else:
                         for key2 in dict2_cel_ID.keys():
-            
+                            df2['coloc'] = 0
                             condition1 = df2['cell_id'] == key2
                             for id in dict2_cel_ID[key2].keys():
                                 condition2 = df2['part_id'] == id
                                 df2.loc[condition1 & condition2, 'coloc'] = dict2_cel_ID[key2][id]
-                        df2['coloc'] = df2['coloc'].fillna(0)
 
             for key in new_dict.keys():   # for loop for size colocalization
 
