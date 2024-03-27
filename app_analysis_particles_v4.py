@@ -190,8 +190,13 @@ def distance_histogram(data, total, channel,axis):
     # set the y-axis label
     ax.set_ylabel('Quantity of particles')
     # set the title
-    ax.set_title(
-        "Histogram of the Lengthwise Distance From the Middle of the Center of the Cell for Channel: "+str(channel))
+    if axis=="center":
+        ax.set_title(
+            "Histogram of the Lengthwise Distance From the Middle\nof the Center of the Cell for Channel: "+str(channel))
+    else:
+        ax.set_title(
+            "Histogram of the Lengthwise Distance From the Middle\nof the Axis of the Cell for Channel: "+str(channel))
+   
 
     plt.legend(loc="upper right")
     # show the plot
@@ -531,10 +536,10 @@ def point_in_poly(x, y, poly):
     return inside
 
 
-def cell_lenght(outline):
+def cell_length(outline):
     """
     Output:
-    - The lenght of the cell (in pixels)
+    - The length of the cell (in pixels)
     - The approximate center of the cell (in pixels)
     Input:
     - outline: The polygon defined by a set of vertices, which is a list of coordinates given by the function 'outlines_list' from the cellpose package.
@@ -563,7 +568,7 @@ def cell_lenght(outline):
 
  
     
-    # Find the lenght using the Pythagoras formula
+    # Find the length using the Pythagoras formula
     cell_len = math.sqrt((maxx-minx)**2+(maxy-miny)**2)
     # Find the approximate center of the cell
     center_coordinate = [minx+(maxx-minx)/2, miny+(maxy-miny)/2]
@@ -595,7 +600,7 @@ def table_creation(data, header, outlines, size, min):
     # the final table with 11 columns and 5000 rows (5000 is arbitrary to not cause error)
     table = np.zeros((5000, 11))
     count = 0
-    one, two, three, four, five, six = [ [] for i in range(6)] # one ,two , ... are lists that will contain the counts for each different classes of cell lenght chosen
+    one, two, three, four, five, six = [ [] for i in range(6)] # one ,two , ... are lists that will contain the counts for each different classes of cell length chosen
     rel_dist_center = []  # list of the relative distance of particles from the cell center
     rel_dist_axis = []  # list of the relative distance of particles from the cell center
     z = 0  # this var
@@ -615,7 +620,7 @@ def table_creation(data, header, outlines, size, min):
     # -----------create tables
     for i in range(len(outlines)):
         poly = outlines[i]
-        cell_len, cell_center, maxx, maxy, minx, miny= cell_lenght(poly)
+        cell_len, cell_center, maxx, maxy, minx, miny= cell_length(poly)
 
 
         if cell_len > min:
@@ -655,14 +660,14 @@ def table_creation(data, header, outlines, size, min):
                     distance_from_center = math.sqrt((y-cell_center[1])**2+(x-cell_center[0])**2)
 
                     # append the relative distance of the particle from the cell center to the lists
-                    rel_dist_center.append(distance_from_center/(cell_len/2))   # normalized distance by half the cell lenght, this gives us a noramlized value between 0 and 1.
+                    rel_dist_center.append(distance_from_center/(cell_len/2))   # normalized distance by half the cell length, this gives us a noramlized value between 0 and 1.
                     rel_dist_axis.append(distance_from_yaxis/(cell_len/2))
 
                     count += 1 # increment the number of particles per cell
 
                     table[z][0] = i+1 # cell number
                     table[z][1] = count # number of particles per cell
-                    table[z][3] = cell_len # cell_lenght in pixels
+                    table[z][3] = cell_len # cell_length in pixels
                     table[z][4] = x # x coordinate of the particle
                     table[z][5] = y # y coordinate of the particle
                     table[z][6] = data[j][col_int] # integrated intensity of the particle
@@ -684,7 +689,7 @@ def table_creation(data, header, outlines, size, min):
 
             if (count == 0): # if there is no particle in the cell
                 table[z][0] = i+1 # cell number
-                table[z][3] = cell_len # cell_lenght in pixels
+                table[z][3] = cell_len # cell_length in pixels
                 table[z][7] = cell_center[0] # x coordinate of the cell center
                 table[z][8] = cell_center[1]  # the rest of the columns will be 0
                 coloc[cellnum] = [] # create a list for each cell number in the dictionary
@@ -705,7 +710,7 @@ def table_creation(data, header, outlines, size, min):
 
             if (function):
 
-                nanometer = size*cell_len # cell_lenght in pixels, size= pixel size in nanometers
+                nanometer = size*cell_len # cell_length in pixels, size= pixel size in nanometers
 
                 if (nanometer < bin1 ):
                     one.append(count)
@@ -764,26 +769,26 @@ def colocalization(Input_chan, other_chan, pixel_dist, channel):
     for key1 in Input_chan.keys():  # iterates through all the cells of the image
 
 
-        if (len(Input_chan[key1]) != 0 and len(other_chan[key1]) != 0):
+        if (len(Input_chan[key1]) != 0 and len(other_chan[key1]) != 0): # if there is at least one particle in the cell of the first channel
 
-            for j,can1 in enumerate(Input_chan[key1]):
+            for j,can1 in enumerate(Input_chan[key1]): # iterates through all the particles of the cell of the first channel
 
                 smallest_dist = float('inf')
-                if len(other_chan[key1]) != 0:
+                if len(other_chan[key1]) != 0: # if there is at least one particle in the cell of the second channel
 
-                    for y, can2 in enumerate(other_chan[key1]):
+                    for y, can2 in enumerate(other_chan[key1]): # iterates through all the particles of the cell of the second channel
 
                         allowed, dist = allowed_dist(
                             Input_chan[key1][j],other_chan[key1][y] , pixel_dist)
 
-                        if allowed and dist <= smallest_dist:
+                        if allowed and dist <= smallest_dist: 
                             smallest_dist = dist
                             candidate = y
                             boo = True
                         else:
                             continue
 
-                    if boo:
+                    if boo: # if there is a colocalization
                         del other_chan[key1][candidate]
                         # add to the dictionary the number of colocalizations per cell
                         result += 1
@@ -846,24 +851,24 @@ def size_colocalization(Input_chan, other_chan, pixel_dist, table, size):
                         else:
                             del other_chan[key1][y]
            
-                        value = df.set_index('cell_id').loc[key1, 'cell_lenght']
+                        value = df.set_index('cell_id').loc[key1, 'cell_length']
 
                         if value.size >= 2:
                             value = value.iloc[0]
 
-                        lenght = value*size
+                        length = value*size
 
-                        if (lenght < bin1):
+                        if (length < bin1):
                             result[0] = result[0]+1  
-                        elif (lenght > bin1 and lenght <= bin2):
+                        elif (length > bin1 and length <= bin2):
                             result[1] = result[1]+1
-                        elif (lenght > bin2 and lenght <= bin3):
+                        elif (length > bin2 and length <= bin3):
                             result[2] = result[2]+1
-                        elif (lenght > bin3 and lenght <=bin4):
+                        elif (length > bin3 and length <=bin4):
                             result[3] = result[3]+1
-                        elif (lenght > bin4 and lenght <=bin5):
+                        elif (length > bin4 and length <=bin5):
                             result[4] = result[4]+1
-                        elif (lenght > bin5 ):
+                        elif (length > bin5 ):
                             result[5] = result[5]+1
                             
                         else:
@@ -915,7 +920,7 @@ def main1(directory_seg, directory_res, Coloc_bysize , folder_integrated, parame
 # SOME INPUT TO ASK THE USER
     pixel = parameter['pixel_size']
     too_small = parameter['cell_length']  # this is in pixel length 
-    names = ['cell_id', 'part_id', 'total_count', 'cell_lenght',
+    names = ['cell_id', 'part_id', 'total_count', 'cell_length',
              'Part_X_(px)', 'Part_Y_(px)', 'IntegratedIntensity', 'Cellcenter_X(px)', 'Cellcenter_Y(px)', 'Distance_from_center', 'Distance_from_yaxis']
 
 # ------ #total particles for each channel --------------------------------------------------------------------------------------------------------------------------------------------
@@ -955,7 +960,7 @@ def main1(directory_seg, directory_res, Coloc_bysize , folder_integrated, parame
                 fiji_1 = fiji_1.reshape(1, -1)
             #if file is empty create a fake header to avoid error
             if len(file_content)==0 :
-                header = ['cell_id', 'part_id', 'total_count', 'cell_lenght',
+                header = ['cell_id', 'part_id', 'total_count', 'cell_length',
                         'Part_X_(px)', 'Part_Y_(px)', 'IntegratedIntensity', 'Cellcenter_X(px)', 'Cellcenter_Y(px)', 'Distance_from_center', 'Distance_from_yaxis']
             else:
                 header = np.genfromtxt([file_content[0]], delimiter='\t', dtype=str)
@@ -973,7 +978,7 @@ def main1(directory_seg, directory_res, Coloc_bysize , folder_integrated, parame
                 fiji_2 = fiji_2.reshape(1, -1)
 
             if len(file_content2)==0 :
-                header = ['cell_id', 'part_id', 'total_count', 'cell_lenght',
+                header = ['cell_id', 'part_id', 'total_count', 'cell_length',
                         'Part_X_(px)', 'Part_Y_(px)', 'IntegratedIntensity', 'Cellcenter_X(px)', 'Cellcenter_Y(px)', 'Distance_from_center', 'Distance_from_yaxis']
             else:
                 header = np.genfromtxt([file_content[0]], delimiter='\t', dtype=str)
@@ -1046,7 +1051,7 @@ def main1(directory_seg, directory_res, Coloc_bysize , folder_integrated, parame
                     rate, dict1_cel_ID, dict2_cel_ID = colocalization(inco, othco, pixx, channel)
                     new_dict[pixx] += rate
 
-                if pixx == 2:  #we track colocalisation for each particle at a distance of 2 pixels (130 nm, if the pixel size is 65 nm)
+                if pixx == 2:  #we track colocalisation for each particle at a distance of 2 pixels (130 nm, if the pixel size is 65 nm) in the dataframe 
                     
                     if channel == 1:
         
@@ -1135,7 +1140,7 @@ def main2(directory_seg, directory_res, folder_integrated, parameters, selected_
 
     pixel = parameters['pixel_size']
     too_small = parameters['cell_length'] 
-    names = ['cell_id', 'part_id', 'total_count', 'cell_lenght',
+    names = ['cell_id', 'part_id', 'total_count', 'cell_length',
              'Part_X_(px)', 'Part_Y_(px)', 'IntegratedIntensity', 'Cellcenter_X(px)', 'Cellcenter_Y(px)', 'Distance_from_center', 'Distance_from_yaxis']
     files=[]
     for filename in os.listdir(directory_res):
@@ -1180,7 +1185,7 @@ def main2(directory_seg, directory_res, folder_integrated, parameters, selected_
             
             #if file is empty create a fake header to avoid error
             if len(file_content)==0 :
-                header = ['cell_id', 'part_id', 'total_count', 'cell_lenght',
+                header = ['cell_id', 'part_id', 'total_count', 'cell_length',
                         'Part_X_(px)', 'Part_Y_(px)', 'IntegratedIntensity', 'Cellcenter_X(px)', 'Cellcenter_Y(px)', 'Distance_from_center', 'Distance_from_yaxis']
             else:
                 header = np.genfromtxt([file_content[0]], delimiter='\t', dtype=str)

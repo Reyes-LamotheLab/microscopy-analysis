@@ -1,0 +1,20 @@
+[path]
+
+segmentation = "/Users/ceciliaacosta/Desktop/Rodrigo Lab Data/Npy"
+particles = "/Users/ceciliaacosta/Desktop/Rodrigo Lab Data/Particules"
+output_folder = "/Users/ceciliaacosta/Desktop/Rodrigo Lab Data/results"
+
+
+[coloc]
+colocalization = false
+colocalization_per_size = true
+folder_integrated = ""   # DEFAULT = "" else give the path to the folder containing the integrated intensity of the cells
+
+
+[parameters]  
+pixel_size = 65   # pixel size in microns
+min_cell_size = 0   # minimum size of the cell to be considered in the analysis
+channel = 1    # channel to be colocalized on
+
+
+

@@ -1,29 +1,43 @@
-import json
-from analysis_non_app import main1
+import toml
+from analysis_non_app import *  # Make sure to define your analysis functions here
 
-import os
-print(os.path.abspath('analysis_non_app.py'))
-print(os.path.abspath('run_multiple_analysis.py'))
-# Load configuration
-with open('config.json', 'r') as config_file:
-    config = json.load(config_file)
+# Load TOML configuration
+with open('config.toml', 'r') as config_file:
+    config = toml.load(config_file)
 
-def run_analysis(analysis_name, params, output_folder):
+# Extracting specific sections into variables for easier access
+path_config = config['path']
+coloc_config = config['coloc']
+parameters = config['parameters']
+
+def perform_analysis(path_config, coloc_config, parameters):
     """
-    Executes an analysis with given parameters and stores results in the specified folder.
+    Executes the analysis based on the provided configuration.
     """
-    # Example function call - replace with actual function calls as needed
-    
-    main1(directory_seg, directory_res, Coloc_bysize , folder_integrated, parameter, channel, selected_folder_path)
-    # Assuming your function accepts keyword arguments
-    # Save result to the specified output folder
-    # This could involve saving files, plots, etc.
-    save_result(output_folder, result)
+    # Example of using the path configuration
+    segmentation_path = path_config['segmentation']
+    particles_path = path_config['particles']
+    output_folder = path_config['output_folder']
 
-def save_result(output_folder, result):
-    # Implement saving results to files or directories here
-    pass
+    # Example of handling colocalization settings
+    if coloc_config['colocalization']:
+        if coloc_config['colocalization_per_size']:
+        # Implement colocalization analysis here
+            main1(segmentation_path, particles_path, True , coloc_config["folder_integrated"] , parameters, parameters["channel"], output_folder)
+        else:
+            main1(segmentation_path, particles_path, False , coloc_config["folder_integrated"] , parameters, parameters["channel"], output_folder)
+    else: 
+        main2(segmentation_path, particles_path,coloc_config["folder_integrated"], parameters, output_folder)
 
-# Iterate over each analysis in the configuration and run them
-for analysis_name, details in config.items():
-    run_analysis(analysis_name, details['params'], details['output_folder'])
+
+
+
+# Implement the analysis functions here
+
+def save_result(output_folder, config):
+    # Implement saving tolm here
+    with open(output_folder + '/result.toml', 'w') as result_file:
+        toml.dump(config, result_file)
+
+# Perform the analysis
+perform_analysis(path_config, coloc_config, parameters)

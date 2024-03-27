@@ -881,7 +881,7 @@ def size_colocalization(Input_chan, other_chan, pixel_dist, table, size):
 # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
    
 
-def main1(directory_seg, directory_res, Coloc_bysize , folder_integrated, parameter, channel, selected_folder_path): 
+def main1(directory_seg, directory_res, Coloc_bysize , folder_integrated, parameters, channel, selected_folder_path): 
     """
     Output:
     This function creates the results folder and calls all the functions to create the results of the analysis.
@@ -912,8 +912,8 @@ def main1(directory_seg, directory_res, Coloc_bysize , folder_integrated, parame
 
 
 # SOME INPUT TO ASK THE USER
-    pixel = parameter['pixel_size']
-    too_small = parameter['cell_length']  # this is in pixel length 
+    pixel = parameters['pixel_size']
+    too_small = parameters['min_cell_size']  # this is in pixel length 
     names = ['cell_id', 'part_id', 'total_count', 'cell_lenght',
              'Part_X_(px)', 'Part_Y_(px)', 'IntegratedIntensity', 'Cellcenter_X(px)', 'Cellcenter_Y(px)', 'Distance_from_center', 'Distance_from_yaxis']
 
@@ -1051,21 +1051,22 @@ def main1(directory_seg, directory_res, Coloc_bysize , folder_integrated, parame
                         print('here1')
 
                         for key1 in dict1_cel_ID.keys():
+                            df1['coloc'] = 0
 
                             condition1 = df1['cell_id'] == key1
                             for id in dict1_cel_ID[key1].keys():
                                 condition2 = df1['part_id'] == id
                                 df1.loc[condition1 & condition2, 'coloc'] = dict1_cel_ID[key1][id]
-                        df1['coloc'] = df1['coloc'].fillna(0)
+         
             
                     else:
                         for key2 in dict2_cel_ID.keys():
-            
+                            df2['coloc'] = 0
                             condition1 = df2['cell_id'] == key2
                             for id in dict2_cel_ID[key2].keys():
                                 condition2 = df2['part_id'] == id
                                 df2.loc[condition1 & condition2, 'coloc'] = dict2_cel_ID[key2][id]
-                        df2['coloc'] = df2['coloc'].fillna(0)
+           
 
             for key in new_dict.keys():   # for loop for size colocalization
 
@@ -1132,7 +1133,7 @@ def main2(directory_seg, directory_res, folder_integrated, parameters, selected_
     global number_of_cells
 
     pixel = parameters['pixel_size']
-    too_small = parameters['cell_length'] 
+    too_small = parameters['min_cell_size']  # this is in pixel length  
     names = ['cell_id', 'part_id', 'total_count', 'cell_lenght',
              'Part_X_(px)', 'Part_Y_(px)', 'IntegratedIntensity', 'Cellcenter_X(px)', 'Cellcenter_Y(px)', 'Distance_from_center', 'Distance_from_yaxis']
     files=[]
