@@ -20,8 +20,8 @@ matplotlib.rcParams['pdf.fonttype'] = 42
 # BINNING FOR THE SIZE OF THE CELLS, THE USER CAN CHANGE THE VALUES BUT THE NUMBER OF BINS SHOULD BE THE SAME
 bin1 ,bin2, bin3, bin4, bin5=[2000, 2500, 3000, 3500, 4000]
 
-color_channel1 = 'yellow'
-color_channel2 = 'cyan'
+color_channel1 = 'cyan'
+color_channel2 = 'yellow'
 
 # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 ####################################################################################################################################################################################################################
@@ -190,7 +190,7 @@ def distance_histogram(data, total, channel,axis):
     ax.set_ylabel('Quantity of particles')
     # set the title
     ax.set_title(
-        "Histogram of the Lengthwise Distance From the Middle of the Center of the Cell for Channel: "+str(channel))
+        "Histogram of the Lengthwise Distance From the Middle\n of the Center of the Cell for Channel: "+str(channel))
 
     plt.legend(loc="upper right")
     # show the plot
@@ -322,7 +322,96 @@ def coloc_integrated_plot(filename):
     big_df=pd.DataFrame()
 
     for csv_file in csv_files:
+        print(csv_file)
         file = None
+        if os.path.basename(csv_file).startswith(filename):
+            file = filename
+        if file:
+            df = pd.read_csv(csv_file)
+            big_df = pd.concat([big_df, df], axis=0)
+
+    # for each integrated intensity value that falls in the bin, calculate the ratio of 1 to total number of elements in the bin 
+    min_value = big_df['IntegratedIntensity'].min()
+    max_value = big_df['IntegratedIntensity'].max()
+    ratios = []
+
+    # Ensure that the min and max values are valid numbers and min is not greater than max
+    if np.isnan(min_value) or np.isnan(max_value) or min_value > max_value:
+        print("Invalid min or max values. Cannot create bin edges.")
+    else:
+        print("Creating bin edges for the integrated intensity values.")
+    # Define the number of quantiles
+        num_quantiles = 50  # This will create 10 quantile bins
+
+        # Use np.linspace to create evenly spaced quantiles between 0 and 1
+        quantiles = np.linspace(0, 1, num_quantiles + 1)
+
+        # Use np.quantile to find the bin edges based on the quantiles
+        bin_edges = np.quantile(big_df['IntegratedIntensity'], quantiles)
+            # Remove non-unique edges
+        bin_edges = np.unique(bin_edges)
+
+        if len(bin_edges) < 2:
+            print("Not enough unique bin edges available after removing duplicates.")
+            return
+
+    # Use pd.cut to bin the data
+    big_df['bins'] = pd.cut(big_df['IntegratedIntensity'], bins=bin_edges)
+
+    
+    ratios=big_df.groupby('bins')['coloc'].agg(lambda x: x.sum() / len(x) if len(x) > 0 else np.nan)
+    total = big_df.groupby('bins')['total_count'].sum()
+   
+    
+
+    # Create the primary axis for the ratios
+    fig, ax1 = plt.subplots(figsize=(10, 6))
+
+    # Plot the ratios as a bar plot on the primary axis
+    ratios.plot(kind='bar', ax=ax1, color='blue', alpha=0.6)
+
+    # Set the labels for the primary axis
+    ax1.set_xlabel('Integrated Intensity Bins')
+    
+    ax1.set_ylabel('Ratio of Colocalization', color='blue')
+    ax1.tick_params(axis='y', labelcolor='blue')
+
+    # Define the bin labels for the x-axis
+    bin_labels = [f"{int(left)}-{int(right)}" for left, right in zip(bin_edges[:-1], bin_edges[1:])]
+    ax1.set_xticklabels(bin_labels, rotation=45, ha='right', fontsize=7)
+
+    # Create a second y-axis to plot the total count
+    ax2 = ax1.twinx()
+
+    # Plot the total count as a line plot on the secondary axis
+    total.plot(kind='line', ax=ax2, color='red', marker='o', linewidth=2, markersize=6)
+
+    # Set the labels for the secondary axis
+    ax2.set_ylabel('Total Number of Particles', color='red')
+    ax2.tick_params(axis='y', labelcolor='red')
+
+    # Set the title for the plot
+    ax1.set_title('Ratio of Colocalization and Total Number of Particles vs Integrated Intensity')
+
+    plt.tight_layout()  # Adjust layout to fit all labels
+
+
+    plt.savefig(str(results_folder_path) + '/' + 'coloc_per_integratedIntensity.pdf', format='pdf')
+
+
+def coloc_integrated_number(filename):
+    """
+    Output:
+    Histogram of the ratio of colocalized particles/total particles per integrated intensity bin. 
+    """
+    plt.style.use('ggplot')
+    global results_folder_path
+    csv_files = glob.glob(os.path.join(results_folder_path, '*.csv'))
+    big_df=pd.DataFrame()
+
+    for csv_file in csv_files:
+        file = None
+        print(csv_file)
         if os.path.basename(csv_file).startswith(filename):
             file = filename
         if file:
@@ -397,70 +486,6 @@ def coloc_integrated_plot(filename):
     plt.savefig(str(results_folder_path) + '/' + 'coloc_per_integratedIntensity.pdf', format='pdf')
 
 
-def coloc_integrated_number(filename):
-    """
-    Output:
-    Histograms of total number of coloc per cells for a distance of 2 pixels, where we use the integrated intensity of the particles to filter them.
-    Input: 
-    """
-    plt.style.use('ggplot')
-
-    global results_folder_path
-    csv_files = glob.glob(os.path.join(results_folder_path, '*.csv'))
-    big_df=pd.DataFrame()
-    # Iterate through the CSV files
-    for csv_file in csv_files:
-        file = None
-        if os.path.basename(csv_file).startswith(filename):
-            file = filename
-        if file:
-            # Read the CSV file
-            df = pd.read_csv(csv_file)
-            
-            # # Filter out rows with 'IntegratedIntensity' >= 200
-            # df = df[df['IntegratedIntensity'] >= 200]
-
-            big_df = pd.concat([big_df, df], axis=0)
-
-    labels = ['Particles_per_cell=0', 'Particles_per_cell=1', 'Particles_per_cell=2']
-    fig, ax = plt.subplots(figsize=(10, 6))  # You can set the figure size
-    coloc=np.arange(0, 3, 1)
-    colors=['orange', 'blue', 'green']
-    for lab, coloc, color in zip(labels, coloc, colors):
-
-        filtered_df=big_df[big_df['coloc']==coloc]   # Step 3: Use np.arange to create bins with steps of 10
-        # Check the min and max values
-
-        min_value = filtered_df['IntegratedIntensity'].min()
-        max_value = filtered_df['IntegratedIntensity'].max()
-
-
-        # Ensure that the min and max values are valid numbers and min is not greater than max
-        if np.isnan(min_value) or np.isnan(max_value) or min_value > max_value:
-            print("Invalid min or max values. Cannot create bin edges.")
-        else:
-            bin_edges = np.arange(start=np.floor(min_value), stop=np.ceil(max_value) + 10, step=1500)
-            print("Bin edges:", bin_edges)
-
-        # Use pd.cut to bin the data
-        binned_data = pd.cut(filtered_df['IntegratedIntensity'], bins=bin_edges)
-
-        # Step 4: Use pd.value_counts to count the number of values in each bin
-            # Step 4: Plot the histogram
-        binned_data.value_counts().sort_index().plot(kind='bar', label=lab, alpha=0.5, width=1, edgecolor='black', ax=ax, color=color)
-
-        # Step 5: Finalize and show the plot
-    ax.set_xlabel('Bins')
-    ax.set_ylabel('Frequency')
-    ax.set_title('Histogram of Binned Data from IntegratedIntensity (Multiple Conditions)')
-    for tick in ax.xaxis.get_major_ticks():
-        tick.label.set_fontsize(7)  # Set x-axis tick label size
-        tick.label.set_rotation(45)  # Rotate tick labels if needed
-
-    ax.legend()
-    plt.savefig(str(results_folder_path) + '/' + 'coloc_per_integratedIntensity.pdf', format='pdf')
-
-
 
 
 def integrated_intensity(folder_integrated):
@@ -513,6 +538,10 @@ def point_in_poly(x, y, poly):
     # Check if a point (x,y) is inside a polygon defined by a set of vertices
     n = len(poly)
     inside = False
+
+    if len(poly) < 3:
+        # Polygon must have at least 3 points
+        return False
 
     p1x, p1y = poly[0]
 
@@ -794,7 +823,6 @@ def colocalization(Input_chan, other_chan, pixel_dist, channel):
                     boo = False
                 else:
                     continue
-    print(result )
 
     return result, cols_in_each_cellIDchan1, cols_in_each_cellIDchan2
 
@@ -844,8 +872,10 @@ def size_colocalization(Input_chan, other_chan, pixel_dist, table, size):
                  
                         else:
                             del other_chan[key1][y]
-           
-                        value = df.set_index('cell_id').loc[key1, 'cell_lenght']
+                        try:
+                            value = df.set_index('cell_id').loc[key1, 'cell_lenght']
+                        except KeyError:
+                            continue
 
                         if value.size >= 2:
                             value = value.iloc[0]
@@ -938,7 +968,6 @@ def main1(directory_seg, directory_res, Coloc_bysize , folder_integrated, parame
 
         if not filename.endswith(".DS_Store") and not filename.startswith("._"):
             print(filename)
-
             seg_file = os.path.join(directory_seg, filename)
             seg_masks = np.load(seg_file, allow_pickle=True).item()
             #masks = seg_masks['masks']
@@ -1046,22 +1075,29 @@ def main1(directory_seg, directory_res, Coloc_bysize , folder_integrated, parame
                     new_dict[pixx] += rate
 
                 if pixx == 2:  #we track colocalisation for each particle at a distance of 2 pixels (130 nm, if the pixel size is 65 nm)
-                    print('here')
                     if channel == 1:
-                        print('here1')
-
+                        df1['coloc'] = 0
                         for key1 in dict1_cel_ID.keys():
-                            df1['coloc'] = 0
+                
 
                             condition1 = df1['cell_id'] == key1
+                   
+
                             for id in dict1_cel_ID[key1].keys():
+                                
                                 condition2 = df1['part_id'] == id
-                                df1.loc[condition1 & condition2, 'coloc'] = dict1_cel_ID[key1][id]
+                               
+                                print("dict1_cel_ID[key1][id]", dict1_cel_ID[key1][id])
+
+                            
+                    
+                                df1.loc[condition1 & condition2 , 'coloc'] = dict1_cel_ID[key1][id] 
          
             
                     else:
+                        df2['coloc'] = 0
                         for key2 in dict2_cel_ID.keys():
-                            df2['coloc'] = 0
+                            
                             condition1 = df2['cell_id'] == key2
                             for id in dict2_cel_ID[key2].keys():
                                 condition2 = df2['part_id'] == id
@@ -1114,9 +1150,12 @@ def main1(directory_seg, directory_res, Coloc_bysize , folder_integrated, parame
 
     integrated_int_histogram("First_channel", color_channel1) # histogram for integrated intensity
     integrated_int_histogram("Second_channel", color_channel2)   # histogram for integrated intensity
+   
     if channel == 1:
+        print("First channel")
         coloc_integrated_plot("First_channel") # histogram for colocalization per integrated intensity
     else: 
+        print("Second channel")
         coloc_integrated_plot("Second_channel") # histogram for colocalization per integrated intensity
 
 
@@ -1139,7 +1178,7 @@ def main2(directory_seg, directory_res, folder_integrated, parameters, selected_
     files=[]
     for filename in os.listdir(directory_res):
         f = os.path.join(directory_res, filename)
-        if not filename.endswith(".DS_Store"):
+        if not filename.endswith(".DS_Store") and filename.endswith("Results"):
             files.append(f)
     files.sort()
 
