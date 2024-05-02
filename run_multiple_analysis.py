@@ -27,6 +27,7 @@ def perform_analysis(path_config, coloc_config, parameters):
         else:
             main1(segmentation_path, particles_path, False , coloc_config["folder_integrated"] , parameters, parameters["channel"], output_folder)
     else: 
+        print("Colocalization is not enabled")
         main2(segmentation_path, particles_path,coloc_config["folder_integrated"], parameters, output_folder)
 
 
