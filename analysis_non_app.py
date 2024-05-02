@@ -10,8 +10,6 @@ import math
 import copy          
 from matplotlib.ticker import PercentFormatter
 import seaborn as sns
-import tkinter as tk
-from tkinter import filedialog, messagebox
 from collections import defaultdict
 
 
@@ -46,7 +44,7 @@ def counts_histogram(total_1, total_2):
         bins1 = np.arange(0, int(np.max(total_1))+1, 1) 
         print(int(np.max(total_1))+1, 'int(np.max(total_1))+1')
         ax = fig.add_subplot(111)
-        ax.hist(total_1, weights=np.ones(len(total_1)) / len(total_1),  alpha=0.6, label="channel 1,  number of particles=" +
+        ax.hist(total_1, weights=np.ones(len(total_1)) / len(total_1),  alpha=0.6, label="channel 1,  # of particles=" +
                 str(sum(total_1)), ec="black", rwidth=0.5,  bins=bins1-0.5, facecolor=color_channel1)
         plt.xticks(bins1)
 
@@ -64,7 +62,7 @@ def counts_histogram(total_1, total_2):
         bins1 = np.arange(0, int(max(np.max(total_1)+1, np.max(total_2)))+1, 1)
 
         ax = fig.add_subplot(111)
-        ax.hist(total_1, weights=np.ones(len(total_1)) / len(total_1),  alpha=0.6, label="channel 1,  n=" +
+        ax.hist(total_1, weights=np.ones(len(total_1)) / len(total_1),  alpha=0.6, label="channel 1,  # of particles=" +
                 str(sum(total_1)), ec="black", rwidth=0.5,  bins=bins1-0.5, facecolor=color_channel1)
         ax.hist(total_2, weights=np.ones(len(total_2)) / len(total_2), alpha=0.75, ec="black",
                 label="channel 2,  n="+str(sum(total_2)), rwidth=0.5,  bins=bins1-0.25, facecolor=color_channel2)
@@ -177,7 +175,7 @@ def distance_histogram(data, total, channel,axis):
 
 # plot the data as a bar chart
     plt.bar(edges[:-1], hist, width=bin_width, align='edge',
-            label='n=' + str(sum(total)), ec="black")
+            label='# of particles =' + str(sum(total)), ec="black")
 
     # set the y-axis limit
     ax.set_xlim(0, 0.5)
@@ -213,9 +211,9 @@ def filter_bins(data, range_data):
 def integrated_int_histogram(filename, color):
     """
     Output:
-    This function creates a histogram of the integrated intensity for a channel and saves it in the results folder.
+    This function creates a histogram of the integrated intensity of the particles for a channel and saves it in the results folder.
     Input:
-    - The filename hich is the suffix of the filename which are the CSV files that contain 
+    - The filename: only the suffix of the filename which are the CSV files that contain the data of the particles.
     - The results of this script from the function 'table_creation' and the color of the channel.
     """
 
@@ -269,7 +267,7 @@ def coloc_size_histo(dict_size, tot1, tot2, tot3, tot4,tot5,tot6, pixel, channel
     """
 
     global results_folder_path
-    colc = []   #list of the number of colocalizations per cell size
+    colc = []   #list of the number of colocalizations per cell zize
     for i, val in enumerate(dict_size.values()):
         sum_by_size = np.sum(val, axis=0) # sum all columns, since each column corresponds to a size
         colc.append(sum_by_size)
@@ -284,13 +282,13 @@ def coloc_size_histo(dict_size, tot1, tot2, tot3, tot4,tot5,tot6, pixel, channel
 
     #x_labels = [x*pixel for x in [0.5, 1, 1.5, 2, 2.5, 3]]
 
-    data = colc2[3]  # Select the list in the third index
+    colocalization_130nm = colc2[3]  # Select the list in the third index since we are interested in the colocalization rate for a distance of 2 pixels only
 
-    print("DATA COLOC FOR 130", data)
+    # print("DATA COLOC FOR 130", data)
     x_labels = [f"{bin1}<size", f"{bin1}< size <{bin2}", f"{bin2}< size <{bin3}", f"{bin3}< size <{bin4}", f"{bin4}< size <{bin5}", f"{bin5}< size"]
     x_values = np.arange(len(x_labels))  # Numerical x-axis values
 
-    heights = [weight * 100 for weight in data]
+    heights = [weight * 100 for weight in colocalization_130nm]
     plt.figure()
 
     # Create the bar chart with custom x-axis labels
@@ -1046,7 +1044,7 @@ def main1(directory_seg, directory_res, Coloc_bysize , folder_integrated, parame
             REL_dist_center2 = np.concatenate((rel_dist_center2, REL_dist_center2),  axis=None)
 
 
-# -----------------Saving results of tables created here in CSV file ---------------
+# -----------------Creating a dataframe to save the results from the table_creation---------------
 
             df1 = pd.DataFrame(table_1, columns=names)
             file_path1 = os.path.join(
@@ -1060,28 +1058,27 @@ def main1(directory_seg, directory_res, Coloc_bysize , folder_integrated, parame
             # drop the rows where cell_ID ==0
             df2=df2[df2.cell_id != 0]
 
-# ----------------- COLOCALIZATION-------------------------
-
-            for pixx in new_dict.keys(): #iterate through the different distances of colocalization
+#============================COLOCALIZATION============================
+#----Iterate through the different distances of colocalization [0.5, 1.0, 1.5, 2, 2.5, 3] and calculate the colocalization rate for each distance
+            for pixx in new_dict.keys(): 
                 if channel==1:
                     inco = copy.deepcopy(coloc)
                     othco = copy.deepcopy(coloc2)
-                    rate, dict1_cel_ID, dict2_cel_ID = colocalization(inco, othco, pixx, channel)
-                    new_dict[pixx] += rate
-                else: 
+                    rate, dict1_cel_ID, dict2_cel_ID = colocalization(inco, othco, pixx, channel) 
+                    new_dict[pixx] += rate # add the rate of colocalizations to the dictionary
+                else: # if channel is 2
                     inco = copy.deepcopy(coloc2)
                     othco = copy.deepcopy(coloc)
                     rate, dict1_cel_ID, dict2_cel_ID = colocalization(inco, othco, pixx, channel)
                     new_dict[pixx] += rate
 
-                if pixx == 2:  #we track colocalisation for each particle at a distance of 2 pixels (130 nm, if the pixel size is 65 nm)
+ #------ We save the number of colocalisation for each cell ID (within distance of 2 pixels (130 nm)) in the table for csv file
+                if pixx == 2:  
                     if channel == 1:
                         df1['coloc'] = 0
                         for key1 in dict1_cel_ID.keys():
-                
-
+            
                             condition1 = df1['cell_id'] == key1
-                   
 
                             for id in dict1_cel_ID[key1].keys():
                                 
@@ -1089,43 +1086,43 @@ def main1(directory_seg, directory_res, Coloc_bysize , folder_integrated, parame
                                
                                 print("dict1_cel_ID[key1][id]", dict1_cel_ID[key1][id])
 
-                            
-                    
                                 df1.loc[condition1 & condition2 , 'coloc'] = dict1_cel_ID[key1][id] 
-         
-            
+
+
+           #same for channel 2 
                     else:
                         df2['coloc'] = 0
+
                         for key2 in dict2_cel_ID.keys():
-                            
                             condition1 = df2['cell_id'] == key2
+
                             for id in dict2_cel_ID[key2].keys():
                                 condition2 = df2['part_id'] == id
                                 df2.loc[condition1 & condition2, 'coloc'] = dict2_cel_ID[key2][id]
            
+#------ Calculate the colocalization rate per cell size for each distance of colocalization
 
-            for key in new_dict.keys():   # for loop for size colocalization
-
+            for key in new_dict.keys():  # iterate through the different distances of colocalization
                 inco = copy.deepcopy(coloc)
                 othco = copy.deepcopy(coloc2)
                 res = size_colocalization(inco, othco, key, df1, size=pixel)
                 res = np.array(res)
-                dict_size[key].append(res)
+                dict_size[key].append(res) # add the result to the dictionary of the colocalization rate per cell size
 
-
+# -----------------Saving dataframes created here in CSV file ---------------
  
             df1.to_csv(file_path1, index=True, header=True, sep=',')
             df2.to_csv(file_path2, index=True, header=True, sep=',')
 
 
- # --------------Plot the histrogram of counts per cell
+ # --------------Plot the histrogram of counts per cell-------------------------
     counts_histogram(total_1, total_2)
 
-# --------------Plot histogram for each size of cell
+# --------------Plot histogram for each size of cell-------------------------
     size_histogram(tot_1, tot_2, tot_3, tot_4,tot_5,tot_6, 1, total_1)
     size_histogram(tot_1_2, tot_2_2, tot_3_2, tot_4_2, tot_5_2, tot_6_2, 2, total_2)
 
-# -------------Plot histogram for colocalization
+# -------------Plot histogram for colocalization--------------------------------
     if Coloc_bysize:
 
         if channel == 1:
@@ -1141,7 +1138,7 @@ def main1(directory_seg, directory_res, Coloc_bysize , folder_integrated, parame
         coloc_histogram(new_dict, total_2,
                         "Channel 2 on channel 1", pixel, channel)
         
-# distance histogram from the center for both channels 
+#--------Distance histogram from the center for both channels----------------
     distance_histogram(REL_dist_center1, total_1, channel=1, axis='center')
     distance_histogram(REL_dist_center2, total_2, channel=2, axis='center')
 
@@ -1185,14 +1182,14 @@ def main2(directory_seg, directory_res, folder_integrated, parameters, selected_
     if folder_integrated != "":
         integrated_intensity(folder_integrated)
 
-    #------- #total particles for each channel (total 2 = empty in this case--------------------------------------------------------------------------------------------------------------
+    #--------- nunmber of total particles for each channel (total 2 = empty in this case)--------------------------------------------------------------------------------------------------------------
     total_1=np.empty(0)
     total_2=np.empty(0)
-    #------ Variables to make the histogram for particles per cell size------------------------------------------------------------------------------------------------------------------
+    #-------- Variables to make the histogram for particles per cell size------------------------------------------------------------------------------------------------------------------
 
     tot_1, tot_2, tot_3, tot_4, tot_5, tot_6 = [np.empty(0) for i in range(6)]
 
-    #------ Variable to make the histogram of colocalization rate per distance size in pixels----------------------------------------------------------------------------------------------
+    #-------- Variable to make the histogram of colocalization rate per distance size in pixels----------------------------------------------------------------------------------------------
 
     dist1=np.empty(0)  # relative distance from the center
     dist2=np.empty(0) # relative distance from the axis
