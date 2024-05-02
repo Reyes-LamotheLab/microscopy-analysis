@@ -17,7 +17,8 @@ If you already have your trained segmentation model and you know how Cellpose wo
   - Cellpose_Use_CustomModel.ipynb
     - Don't forget the instructions in the notebook and change the parameters: `diameter` and `model_type` 
     - Use it to segment your images (png, tig, jpeg). It will output the segmentations as _seg.npy files which you need to have to do the analysis of particles in cells (use the app_analysis particles.py).
-## Second: You are now ready to use the app that will give you many visualisations!
+      
+## Second: Use app or the config.toml
 ### Run this script app_analysis_particles.py either on Visual Studio Code or on your terminal
 **Attention:** This can be used ONLY after you ran <u>`particles_detection.ijm`</u> and <u>`Cellpose_Use_CustomModel.ipynb`</u> since it relies on their output.
   - Use this analysis script to ouput a table per image analyse and histograms that can be useful such as the following:
