@@ -658,9 +658,9 @@ def table_creation(data, header, outlines, size, min):
                     print("Nan values")
                     continue
                 # if the particle is outside the cell, skip it
-               # if data[j][col_x] == 0 and data[j][col_y] == 0:
-                 #   print("Particle outside the cell")
-                 #   continue
+                if data[j][col_x] == 0 and data[j][col_y] == 0:
+                    print("Particle outside the cell")
+                    continue
 
                 x = data[j][col_x]
                 y = data[j][col_y]
@@ -1178,9 +1178,10 @@ def main2(directory_seg, directory_res, folder_integrated, parameters, selected_
     files=[]
     for filename in os.listdir(directory_res):
         f = os.path.join(directory_res, filename)
-        if not filename.endswith(".DS_Store") and filename.endswith("Results"):
+        if not filename.endswith(".DS_Store") and filename.endswith(".txt"):
             files.append(f)
     files.sort()
+    print(files)
 
     if folder_integrated != "":
         integrated_intensity(folder_integrated)
@@ -1202,13 +1203,14 @@ def main2(directory_seg, directory_res, folder_integrated, parameters, selected_
     for filename in sorted(os.listdir(directory_seg)):
     
         if not filename.endswith(".DS_Store"):
-            print(filename)
+            #print(filename)
         
             seg_file = os.path.join(directory_seg, filename)
             seg_masks=np.load(seg_file, allow_pickle=True).item()
             masks=seg_masks['masks']
             outlines= utils.outlines_list(seg_masks['masks'])
             number_of_cells+=len(outlines)
+
             with open(files[i], 'r', newline='') as file:
                 file_content = file.read().splitlines()
 
