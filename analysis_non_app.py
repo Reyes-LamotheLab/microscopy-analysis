@@ -647,17 +647,20 @@ def table_creation(data, header, outlines, size, min):
         if cell_len > min:
             count = 0
 
-
             for j in range(len(data)):
        
                 if data is None or data.size == 0 :
+                    print("No data")
                     continue
                 # if data row is empty, skip it
+
                 if np.isnan(data[j]).any(): 
+                    print("Nan values")
                     continue
                 # if the particle is outside the cell, skip it
-                if data[j][col_x] == 0 or data[j][col_y] == 0:
-                    continue
+               # if data[j][col_x] == 0 and data[j][col_y] == 0:
+                 #   print("Particle outside the cell")
+                 #   continue
 
                 x = data[j][col_x]
                 y = data[j][col_y]
