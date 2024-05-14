@@ -18,6 +18,8 @@ matplotlib.rcParams['pdf.fonttype'] = 42
 # BINNING FOR THE SIZE OF THE CELLS, THE USER CAN CHANGE THE VALUES BUT THE NUMBER OF BINS SHOULD BE THE SAME
 bin1 ,bin2, bin3, bin4, bin5=[2000, 2500, 3000, 3500, 4000]
 
+
+
 color_channel1 = 'cyan'
 color_channel2 = 'yellow'
 
@@ -320,13 +322,9 @@ def coloc_integrated_plot(filename):
     big_df=pd.DataFrame()
 
     for csv_file in csv_files:
-        print(csv_file)
-        file = None
         if os.path.basename(csv_file).startswith(filename):
-            file = filename
-        if file:
             df = pd.read_csv(csv_file)
-            big_df = pd.concat([big_df, df], axis=0)
+            big_df = pd.concat([big_df, df], ignore_index=True) 
 
     # for each integrated intensity value that falls in the bin, calculate the ratio of 1 to total number of elements in the bin 
     min_value = big_df['IntegratedIntensity'].min()
@@ -447,8 +445,6 @@ def coloc_integrated_number(filename):
     ratios=big_df.groupby('bins')['coloc'].agg(lambda x: x.sum() / len(x) if len(x) > 0 else np.nan)
     total = big_df.groupby('bins')['total_count'].sum()
    
-    
-
     # Create the primary axis for the ratios
     fig, ax1 = plt.subplots(figsize=(10, 6))
 
@@ -516,6 +512,33 @@ def integrated_intensity(folder_integrated):
     plt.ylabel('Values')
     plt.title('Strip Plot')
     plt.savefig(str(results_folder_path)+"/"+'IntDen_violinplot.pdf', format='pdf')
+
+
+def particle_distance_against_cell_size(filename, channel):
+    global results_folder_path
+
+    csv_files = glob.glob(os.path.join(results_folder_path, '*.csv'))
+    big_df=pd.DataFrame()
+
+    for csv_file in csv_files:
+        if os.path.basename(csv_file).startswith(filename):
+            df = pd.read_csv(csv_file)
+            big_df = pd.concat([big_df, df], ignore_index=True) 
+
+    # Create a scatter plot of the relative distance of the particles from the cell center against the cell size, 
+    # separate the color of points by the number of particles per cell. If the particle is is a cell that has x number of particles, the color of the point will be different.
+    plt.figure(figsize=(10, 6))
+
+    #the number of particles per cell serves as the color of the points
+    plt.scatter(big_df['cell_size'], big_df['distance_from_center'], c=big_df['total_count'], cmap='viridis', s=3)
+    #plt.plot(big_df['cell_size'], big_df['distance_from_center'], 'o', color='blue', markersize=3)
+    plt.colorbar(label='Number of particles per cell')
+    plt.xlabel('Cell Size')
+    plt.ylabel('Relative Distance from the Cell Center')
+    plt.title('Relative Distance of Particles from the Cell Center vs Cell Size')
+    plt.savefig(str(results_folder_path) + '/' + 'distance_against_cell_size.pdf', format='pdf')
+
+
 
 # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 ####################################################################################################################################################################################################################
@@ -596,7 +619,7 @@ def cell_lenght(outline):
 
     return cell_len, center_coordinate, maxx, maxy, minx, miny
 
-def table_creation(data, header, outlines, size, min):
+def table_creation(data, header, outlines, size, min, bin_edges):
     """
     Output:
     - Creates a table with the data of the particles per cell for a channel and saves it in the results folder.
@@ -614,6 +637,7 @@ def table_creation(data, header, outlines, size, min):
     """
 
 
+    bins = [[] for _ in range(len(bin_edges) + 1)]
 
     counts = np.empty(0, dtype=int)  # The number of particles per cell
     distance_from_center=0
@@ -643,8 +667,8 @@ def table_creation(data, header, outlines, size, min):
         poly = outlines[i]
         cell_len, cell_center, maxx, maxy, minx, miny= cell_lenght(poly)
 
-
-        if cell_len > min:
+ 
+        if cell_len > min:  # if the cell size is greater than the minimum cell size accepted
             count = 0
 
             for j in range(len(data)):
@@ -680,12 +704,12 @@ def table_creation(data, header, outlines, size, min):
                     scalar_projection = np.dot(vector_particle_cell, cell_middle_vector.T) / np.linalg.norm(cell_middle_vector)
          
                     # calculate the relative distance of the particle from the cell center
-                    distance_from_yaxis= abs(scalar_projection)
+                    distance_from_yaxis= scalar_projection
                     distance_from_center = math.sqrt((y-cell_center[1])**2+(x-cell_center[0])**2)
 
                     # append the relative distance of the particle from the cell center to the lists
                     rel_dist_center.append(distance_from_center/(cell_len/2))   # normalized distance by half the cell lenght, this gives us a noramlized value between 0 and 1.
-                    rel_dist_axis.append(distance_from_yaxis/(cell_len/2))
+                    rel_dist_axis.append(abs(distance_from_yaxis)/(cell_len/2))
 
                     count += 1 # increment the number of particles per cell
 
@@ -730,28 +754,41 @@ def table_creation(data, header, outlines, size, min):
 
             # -----------change variable "function" to True or False depending if you want histograms for each diff cell size------
 
-            function = True
+    #        function = True
 
-            if (function):
+           # if (function):
 
-                nanometer = size*cell_len # cell_lenght in pixels, size= pixel size in nanometers
+           
 
-                if (nanometer < bin1 ):
-                    one.append(count)
-                elif (nanometer > bin1 and nanometer <= bin2):
-                    two.append(count)
-                elif (nanometer > bin2 and nanometer <= bin3):
-                    three.append(count)
-                elif (nanometer > bin3 and nanometer <= bin4):
-                    four.append(count)
-                elif(nanometer > bin4 and nanometer <= bin5):
-                    five.append(count)
-                elif(nanometer > bin5):
-                    six.append(count)
-                
-                else:
-                    continue
-        else:
+            nanometer = size*cell_len # cell_lenght in pixels, size= pixel size in nanometers
+
+                # Initialize a list of lists for bins
+
+
+            for i, edge in enumerate(bin_edges):
+                if nanometer <= edge:
+                    bins[i].append(count)
+                    placed = True
+                    break
+        
+
+            if (nanometer < bin1 ):
+                one.append(count)
+            elif (nanometer > bin1 and nanometer <= bin2):
+                two.append(count)
+            elif (nanometer > bin2 and nanometer <= bin3):
+                three.append(count)
+            elif (nanometer > bin3 and nanometer <= bin4):
+                four.append(count)
+            elif(nanometer > bin4 and nanometer <= bin5):
+                five.append(count)
+            elif(nanometer > bin5):
+                six.append(count)
+            
+            else:
+                continue
+
+        else:  # cell size is too small (noisy segmentation)
             continue
 
     return table, counts, one, two, three, four, five, six, coloc, rel_dist_center, rel_dist_axis, cellnum
@@ -829,7 +866,7 @@ def colocalization(Input_chan, other_chan, pixel_dist, channel):
 
 
 
-def size_colocalization(Input_chan, other_chan, pixel_dist, table, size):
+def size_colocalization(Input_chan, other_chan, pixel_dist, table, size, bin_edges):
     """
     Output: 
     This function calculates the colocalization rate per cell size for a channel.
@@ -840,6 +877,8 @@ def size_colocalization(Input_chan, other_chan, pixel_dist, table, size):
     - table: The table of the particles per cell for the first channel.
     - size: The pixel size in nanometers.
     """
+        # Initialize a list of lists for bins
+    bins = [[] for _ in range(len(bin_edges) + 1)]
 
 
     df = pd.DataFrame(table)
@@ -925,6 +964,7 @@ def main1(directory_seg, directory_res, Coloc_bysize , folder_integrated, parame
     - channel: Which channel is the colocalization analysis for.
     - selected_folder_path: The path of the results folder.
     """
+    bin_edges=[]
 
     global results_folder_path
     global number_of_cells
@@ -1014,10 +1054,10 @@ def main1(directory_seg, directory_res, Coloc_bysize , folder_integrated, parame
             i += 1
 
             table_1, counts_1, one, two, three, four,five, six, coloc, rel_dist_center1, rel_dist_axis1, cellnum1 = table_creation(
-                fiji_1,header, outlines, pixel, too_small)
+                fiji_1,header, outlines, pixel, too_small, bin_edges)  # channel 1
 
             table_2, counts_2, one2, two2, three2, four2,five2, six2, coloc2, rel_dist_center2, rel_dist_axis2, cellnum2 = table_creation(
-                fiji_2,header, outlines, pixel, too_small)  # channel 2
+                fiji_2,header, outlines, pixel, too_small, bin_edges)  # channel 2
 
 
 # ------------------# of particle per cell histogram for both channel -------------

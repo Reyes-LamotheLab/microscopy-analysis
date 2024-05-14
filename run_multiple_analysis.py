@@ -9,6 +9,7 @@ with open('config.toml', 'r') as config_file:
 path_config = config['path']
 coloc_config = config['coloc']
 parameters = config['parameters']
+bins=config["bins"]
 
 def perform_analysis(path_config, coloc_config, parameters):
     """
