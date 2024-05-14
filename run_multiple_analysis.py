@@ -9,7 +9,7 @@ with open('config.toml', 'r') as config_file:
 path_config = config['path']
 coloc_config = config['coloc']
 parameters = config['parameters']
-bins=config["bins"]
+
 
 def perform_analysis(path_config, coloc_config, parameters):
     """
@@ -18,10 +18,12 @@ def perform_analysis(path_config, coloc_config, parameters):
     # Example of using the path configuration
     segmentation_path = path_config['segmentation']
     particles_path = path_config['particles']
-    output_folder = path_config['output_folder']
 
+    output_folder = path_config['output_folder']
+    bins=parameters["bins"] 
     # Example of handling colocalization settings
     if coloc_config['colocalization']:
+        
         if coloc_config['colocalization_per_size']:
         # Implement colocalization analysis here
             main1(segmentation_path, particles_path, True , coloc_config["folder_integrated"] , parameters, parameters["channel"], output_folder)

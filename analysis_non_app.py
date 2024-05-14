@@ -530,13 +530,14 @@ def particle_distance_against_cell_size(filename, channel):
     plt.figure(figsize=(10, 6))
 
     #the number of particles per cell serves as the color of the points
-    plt.scatter(big_df['cell_size'], big_df['distance_from_center'], c=big_df['total_count'], cmap='viridis', s=3)
+    plt.scatter(big_df['cell_length'], big_df['Distance_from_yaxis'], c=big_df['total_count'], cmap='viridis', s=3)
     #plt.plot(big_df['cell_size'], big_df['distance_from_center'], 'o', color='blue', markersize=3)
     plt.colorbar(label='Number of particles per cell')
     plt.xlabel('Cell Size')
     plt.ylabel('Relative Distance from the Cell Center')
     plt.title('Relative Distance of Particles from the Cell Center vs Cell Size')
     plt.savefig(str(results_folder_path) + '/' + 'distance_against_cell_size.pdf', format='pdf')
+    plt.show()
 
 
 
@@ -580,7 +581,7 @@ def point_in_poly(x, y, poly):
     return inside
 
 
-def cell_lenght(outline):
+def cell_length(outline):
     """
     Output:
     - The lenght of the cell (in pixels)
@@ -619,6 +620,9 @@ def cell_lenght(outline):
 
     return cell_len, center_coordinate, maxx, maxy, minx, miny
 
+import numpy as np
+import math
+
 def table_creation(data, header, outlines, size, min, bin_edges):
     """
     Output:
@@ -636,22 +640,16 @@ def table_creation(data, header, outlines, size, min, bin_edges):
     - min: The minimum cell size accepted to be part of the analysis in pixels.
     """
 
-
     bins = [[] for _ in range(len(bin_edges) + 1)]
-
     counts = np.empty(0, dtype=int)  # The number of particles per cell
-    distance_from_center=0
-    distance_from_yaxis=0
-    # the final table with 11 columns and 5000 rows (5000 is arbitrary to not cause error)
-    table = np.zeros((5000, 11))
-    count = 0
-    one, two, three, four, five, six = [ [] for i in range(6)] # one ,two , ... are lists that will contain the counts for each different classes of cell lenght chosen
-    rel_dist_center = []  # list of the relative distance of particles from the cell center
-    rel_dist_axis = []  # list of the relative distance of particles from the cell center
-    z = 0  # this var
+    distance_from_center = 0
+    distance_from_yaxis = 0
+    table = []  # Initialize an empty list for the table
+    one, two, three, four, five, six = [[] for _ in range(6)]  # Lists for the counts for each different class of cell length chosen
+    rel_dist_center = []  # List of the relative distance of particles from the cell center
+    rel_dist_axis = []  # List of the relative distance of particles from the cell center
     coloc = {}
     cellnum = 1
-    cell_len = 0
 
     if header[2] == "X_(px)":
         col_x = 2
@@ -665,20 +663,19 @@ def table_creation(data, header, outlines, size, min, bin_edges):
     # -----------create tables
     for i in range(len(outlines)):
         poly = outlines[i]
-        cell_len, cell_center, maxx, maxy, minx, miny= cell_lenght(poly)
+        cell_len, cell_center, maxx, maxy, minx, miny = cell_length(poly)
 
- 
         if cell_len > min:  # if the cell size is greater than the minimum cell size accepted
             count = 0
 
             for j in range(len(data)):
-       
-                if data is None or data.size == 0 :
+
+                if data is None or data.size == 0:
                     print("No data")
                     continue
                 # if data row is empty, skip it
 
-                if np.isnan(data[j]).any(): 
+                if np.isnan(data[j]).any():
                     print("Nan values")
                     continue
                 # if the particle is outside the cell, skip it
@@ -688,109 +685,79 @@ def table_creation(data, header, outlines, size, min, bin_edges):
 
                 x = data[j][col_x]
                 y = data[j][col_y]
-       
-                #Find if the particle is inside the cell segmentation
+
+                # Find if the particle is inside the cell segmentation
                 if point_in_poly(x, y, poly):
-
                     coord = [x, y]  # if particle inside the cell segmentation
-                    if x> cell_center[0]: # if particle is on the right side of the cell center
-                        cell_middle_vector = np.array([maxx-cell_center[0], maxy-cell_center[1]])
-                        vector_particle_cell = np.array([ x - cell_center[0], y - cell_center[1]])
-                    else: # if particle is on the left side of the cell center
-                        cell_middle_vector = np.array([cell_center[0]-minx, cell_center[1]-miny])
-                        vector_particle_cell = np.array([ cell_center[0]-x,cell_center[1]-y ])
+                    if x > cell_center[0]:  # if particle is on the right side of the cell center
+                        cell_middle_vector = np.array([maxx - cell_center[0], maxy - cell_center[1]])
+                        vector_particle_cell = np.array([x - cell_center[0], y - cell_center[1]])
+                    else:  # if particle is on the left side of the cell center
+                        cell_middle_vector = np.array([cell_center[0] - minx, cell_center[1] - miny])
+                        vector_particle_cell = np.array([cell_center[0] - x, cell_center[1] - y])
 
-                    #do a scalar projection of the vector of the particle and the center of the cell on the vector of the cell
+                    # do a scalar projection of the vector of the particle and the center of the cell on the vector of the cell
                     scalar_projection = np.dot(vector_particle_cell, cell_middle_vector.T) / np.linalg.norm(cell_middle_vector)
-         
+
                     # calculate the relative distance of the particle from the cell center
-                    distance_from_yaxis= scalar_projection
-                    distance_from_center = math.sqrt((y-cell_center[1])**2+(x-cell_center[0])**2)
+                    distance_from_yaxis = scalar_projection  # can be negative depending if its left or right of the axis of the cell
+                    distance_from_center = math.sqrt((y - cell_center[1]) ** 2 + (x - cell_center[0]) ** 2)  # always positive
 
                     # append the relative distance of the particle from the cell center to the lists
-                    rel_dist_center.append(distance_from_center/(cell_len/2))   # normalized distance by half the cell lenght, this gives us a noramlized value between 0 and 1.
-                    rel_dist_axis.append(abs(distance_from_yaxis)/(cell_len/2))
+                    rel_dist_center.append(distance_from_center / (cell_len / 2))  # normalized distance by half the cell length, this gives us a normalized value between 0 and 1.
+                    rel_dist_axis.append(abs(distance_from_yaxis) / (cell_len / 2))
 
-                    count += 1 # increment the number of particles per cell
+                    count += 1  # increment the number of particles per cell
 
-                    table[z][0] = i+1 # cell number
-                    table[z][1] = count # number of particles per cell
-                    table[z][3] = cell_len # cell_lenght in pixels
-                    table[z][4] = x # x coordinate of the particle
-                    table[z][5] = y # y coordinate of the particle
-                    table[z][6] = data[j][col_int] # integrated intensity of the particle
-                    table[z][7] = cell_center[0] # x coordinate of the cell center
-                    table[z][8] = cell_center[1] # y coordinate of the cell center
-                    table[z][9] = distance_from_center # relative distance of the particle from the cell center
-                    table[z][10] = distance_from_yaxis # relative distance of the particle from the axis
+                    row = [
+                        i + 1, count, 0, cell_len, x, y,
+                        data[j][col_int], cell_center[0], cell_center[1],
+                        distance_from_center, distance_from_yaxis
+                    ]
+                    table.append(row)  # append the row to the table
 
                     if cellnum not in coloc:
-                        coloc[cellnum] = [] # create a list for each cell number in the dictionary
-                        coloc[cellnum].append(coord) # add the coordinates of the particle to the list
-
+                        coloc[cellnum] = []  # create a list for each cell number in the dictionary
+                        coloc[cellnum].append(coord)  # add the coordinates of the particle to the list
                     else:
                         coloc[cellnum].append(coord)
 
-                    z += 1 # increment the row of the table
+            counts = np.append(counts, count)  # add the number of particles per cell to the list counts
 
-            counts = np.append(counts, count) # add the number of particles per cell to the list counts
-
-            if (count == 0): # if there is no particle in the cell
-                table[z][0] = i+1 # cell number
-                table[z][3] = cell_len # cell_lenght in pixels
-                table[z][7] = cell_center[0] # x coordinate of the cell center
-                table[z][8] = cell_center[1]  # the rest of the columns will be 0
-                coloc[cellnum] = [] # create a list for each cell number in the dictionary
-
-                z += 1
-
+            if count == 0:  # if there is no particle in the cell
+                row = [i + 1, 0, 0, cell_len, 0, 0, 0, cell_center[0], cell_center[1], 0, 0]
+                table.append(row)  # append the row to the table
+                coloc[cellnum] = []  # create a list for each cell number in the dictionary
             else:  # if there is at least one particle in the cell find the cell number and add the number of particles per cell for each cell
-                y = z 
-                for w in range(0, count): 
-                    table[y-1][2] = count
-                    y -= 1
+                for k in range(count):
+                    table[-(k + 1)][2] = count
 
             cellnum += 1
 
-            # -----------change variable "function" to True or False depending if you want histograms for each diff cell size------
-
-    #        function = True
-
-           # if (function):
-
-           
-
-            nanometer = size*cell_len # cell_lenght in pixels, size= pixel size in nanometers
-
-                # Initialize a list of lists for bins
-
+            nanometer = size * cell_len  # cell_length in pixels, size= pixel size in nanometers
 
             for i, edge in enumerate(bin_edges):
                 if nanometer <= edge:
                     bins[i].append(count)
-                    placed = True
                     break
-        
 
-            if (nanometer < bin1 ):
+            if nanometer < bin1:
                 one.append(count)
-            elif (nanometer > bin1 and nanometer <= bin2):
+            elif bin1 <= nanometer <= bin2:
                 two.append(count)
-            elif (nanometer > bin2 and nanometer <= bin3):
+            elif bin2 < nanometer <= bin3:
                 three.append(count)
-            elif (nanometer > bin3 and nanometer <= bin4):
+            elif bin3 < nanometer <= bin4:
                 four.append(count)
-            elif(nanometer > bin4 and nanometer <= bin5):
+            elif bin4 < nanometer <= bin5:
                 five.append(count)
-            elif(nanometer > bin5):
+            elif nanometer > bin5:
                 six.append(count)
-            
-            else:
-                continue
 
         else:  # cell size is too small (noisy segmentation)
             continue
 
+    table = np.array(table)  # convert the table list to a numpy array
     return table, counts, one, two, three, four, five, six, coloc, rel_dist_center, rel_dist_axis, cellnum
 
 
@@ -913,7 +880,7 @@ def size_colocalization(Input_chan, other_chan, pixel_dist, table, size, bin_edg
                         else:
                             del other_chan[key1][y]
                         try:
-                            value = df.set_index('cell_id').loc[key1, 'cell_lenght']
+                            value = df.set_index('cell_id').loc[key1, 'cell_length']
                         except KeyError:
                             continue
 
@@ -985,7 +952,7 @@ def main1(directory_seg, directory_res, Coloc_bysize , folder_integrated, parame
 # SOME INPUT TO ASK THE USER
     pixel = parameters['pixel_size']
     too_small = parameters['min_cell_size']  # this is in pixel length 
-    names = ['cell_id', 'part_id', 'total_count', 'cell_lenght',
+    names = ['cell_id', 'part_id', 'total_count', 'cell_length',
              'Part_X_(px)', 'Part_Y_(px)', 'IntegratedIntensity', 'Cellcenter_X(px)', 'Cellcenter_Y(px)', 'Distance_from_center', 'Distance_from_yaxis']
 
 # ------ #total particles for each channel --------------------------------------------------------------------------------------------------------------------------------------------
@@ -1024,7 +991,7 @@ def main1(directory_seg, directory_res, Coloc_bysize , folder_integrated, parame
                 fiji_1 = fiji_1.reshape(1, -1)
             #if file is empty create a fake header to avoid error
             if len(file_content)==0 :
-                header = ['cell_id', 'part_id', 'total_count', 'cell_lenght',
+                header = ['cell_id', 'part_id', 'total_count', 'cell_length',
                         'Part_X_(px)', 'Part_Y_(px)', 'IntegratedIntensity', 'Cellcenter_X(px)', 'Cellcenter_Y(px)', 'Distance_from_center', 'Distance_from_yaxis']
             else:
                 header = np.genfromtxt([file_content[0]], delimiter='\t', dtype=str)
@@ -1042,7 +1009,7 @@ def main1(directory_seg, directory_res, Coloc_bysize , folder_integrated, parame
                 fiji_2 = fiji_2.reshape(1, -1)
 
             if len(file_content2)==0 :
-                header = ['cell_id', 'part_id', 'total_count', 'cell_lenght',
+                header = ['cell_id', 'part_id', 'total_count', 'cell_length',
                         'Part_X_(px)', 'Part_Y_(px)', 'IntegratedIntensity', 'Cellcenter_X(px)', 'Cellcenter_Y(px)', 'Distance_from_center', 'Distance_from_yaxis']
             else:
                 header = np.genfromtxt([file_content[0]], delimiter='\t', dtype=str)
@@ -1190,6 +1157,7 @@ def main1(directory_seg, directory_res, Coloc_bysize , folder_integrated, parame
 
     integrated_int_histogram("First_channel", color_channel1) # histogram for integrated intensity
     integrated_int_histogram("Second_channel", color_channel2)   # histogram for integrated intensity
+    particle_distance_against_cell_size("First_channel", color_channel1) # scatter plot for particle distance against cell size
    
     if channel == 1:
         print("First channel")
@@ -1210,10 +1178,11 @@ def main2(directory_seg, directory_res, folder_integrated, parameters, selected_
     global results_folder_path
     results_folder_path=selected_folder_path
     global number_of_cells
+    bin_edges = [0, 100, 200, 300, 400, 500, 600]
 
     pixel = parameters['pixel_size']
     too_small = parameters['min_cell_size']  # this is in pixel length  
-    names = ['cell_id', 'part_id', 'total_count', 'cell_lenght',
+    names = ['cell_id', 'part_id', 'total_count', 'cell_length',
              'Part_X_(px)', 'Part_Y_(px)', 'IntegratedIntensity', 'Cellcenter_X(px)', 'Cellcenter_Y(px)', 'Distance_from_center', 'Distance_from_yaxis']
     files=[]
     for filename in os.listdir(directory_res):
@@ -1260,7 +1229,7 @@ def main2(directory_seg, directory_res, folder_integrated, parameters, selected_
             
             #if file is empty create a fake header to avoid error
             if len(file_content)==0 :
-                header = ['cell_id', 'part_id', 'total_count', 'cell_lenght',
+                header = ['cell_id', 'part_id', 'total_count', 'cell_length',
                         'Part_X_(px)', 'Part_Y_(px)', 'IntegratedIntensity', 'Cellcenter_X(px)', 'Cellcenter_Y(px)', 'Distance_from_center', 'Distance_from_yaxis']
             else:
                 header = np.genfromtxt([file_content[0]], delimiter='\t', dtype=str)
@@ -1271,7 +1240,7 @@ def main2(directory_seg, directory_res, folder_integrated, parameters, selected_
 
             i+=1
 
-            table_1, counts_1, one, two, three, four, five, six, coloc, rel_distance_center, rel_distance_axis, cellnum=table_creation(fiji_1,header, outlines,pixel, too_small)
+            table_1, counts_1, one, two, three, four, five, six, coloc, rel_distance_center, rel_distance_axis, cellnum=table_creation(fiji_1,header, outlines,pixel, too_small, bin_edges)  # channel 1    
         #------------------num of particle per cell histogram dataset-------------  
 
             total_1 =np.concatenate((total_1, counts_1), axis=None) 
@@ -1303,3 +1272,4 @@ def main2(directory_seg, directory_res, folder_integrated, parameters, selected_
     distance_histogram(dist2, total_1, channel=1, axis='axis')
 
     integrated_int_histogram('table', color_channel1)   #input channel 1
+    particle_distance_against_cell_size('table', color_channel1) # scatter plot for particle distance against cell size
