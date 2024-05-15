@@ -529,9 +529,17 @@ def particle_distance_against_cell_size(filename, channel):
     # separate the color of points by the number of particles per cell. If the particle is is a cell that has x number of particles, the color of the point will be different.
     plt.figure(figsize=(10, 6))
 
-    #the number of particles per cell serves as the color of the points
-    plt.scatter(big_df['cell_length'], big_df['Distance_from_yaxis'], c=big_df['total_count'], cmap='viridis', s=3)
-    #plt.plot(big_df['cell_size'], big_df['distance_from_center'], 'o', color='blue', markersize=3)
+    #the number of particles per cell serves as the color of the points except when the number of particles is 0, then ignore the point
+    big_df = big_df[big_df['total_count'] != 0]
+    plt.scatter(big_df['cell_length'], big_df['Distance_from_center'], c=big_df['total_count'], cmap='viridis', s=7)
+    
+    #plot two lines to show the cell size considering we want to have the cell length dividec by two and plot it from the center of the cell
+    cell_size = big_df['cell_length']
+    half_cell_size = cell_size/2
+   
+    plt.plot(cell_size , half_cell_size, color='red', linestyle='-', linewidth=0.5)
+    plt.plot(cell_size , -half_cell_size, color='red', linestyle='-', linewidth=0.5)
+
     plt.colorbar(label='Number of particles per cell')
     plt.xlabel('Cell Size')
     plt.ylabel('Relative Distance from the Cell Center')
@@ -702,6 +710,12 @@ def table_creation(data, header, outlines, size, min, bin_edges):
                     # calculate the relative distance of the particle from the cell center
                     distance_from_yaxis = scalar_projection  # can be negative depending if its left or right of the axis of the cell
                     distance_from_center = math.sqrt((y - cell_center[1]) ** 2 + (x - cell_center[0]) ** 2)  # always positive
+
+                    #if the particle is on the right side of the cell center, the distance from the center is positive
+                    if x > cell_center[0]:
+                        distance_from_center = distance_from_center
+                    else:  # if the particle is on the left side of the cell center, the distance from the center is negative
+                        distance_from_center = -distance_from_center
 
                     # append the relative distance of the particle from the cell center to the lists
                     rel_dist_center.append(distance_from_center / (cell_len / 2))  # normalized distance by half the cell length, this gives us a normalized value between 0 and 1.
@@ -1187,7 +1201,7 @@ def main2(directory_seg, directory_res, folder_integrated, parameters, selected_
     files=[]
     for filename in os.listdir(directory_res):
         f = os.path.join(directory_res, filename)
-        if not filename.endswith(".DS_Store") and filename.endswith(".txt"):
+        if not filename.endswith(".DS_Store"):
             files.append(f)
     files.sort()
     print(files)
