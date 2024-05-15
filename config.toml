@@ -2,6 +2,7 @@
 segmentation = "/Users/ceciliaacosta/Desktop/Rodrigo Lab Data/Npy"
 particles = "/Users/ceciliaacosta/Desktop/Rodrigo Lab Data/Particules"
 output_folder = "/Users/ceciliaacosta/Desktop/Rodrigo Lab Data/results"
+other =""
 
 [coloc]
 colocalization = false
