@@ -687,9 +687,9 @@ def table_creation(data, header, outlines, size, min, bin_edges):
                     continue
                 # if data row is empty, skip it
 
-                if np.isnan(data[j]).any():
-                    print("Nan values")
-                    continue
+                #if np.isnan(data[j]).any():
+                #    print("Nan values")
+                #    continue
                 # if the particle is outside the cell, skip it
                 if data[j][col_x] == 0 and data[j][col_y] == 0:
                     print("Particle outside the cell")
