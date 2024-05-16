@@ -35,7 +35,6 @@ def perform_analysis(path_config, coloc_config, parameters):
 
 
 
-
 # Implement the analysis functions here
 
 def save_result(output_folder, config):
@@ -45,3 +44,4 @@ def save_result(output_folder, config):
 
 # Perform the analysis
 perform_analysis(path_config, coloc_config, parameters)
+save_result(path_config['output_folder'], config)

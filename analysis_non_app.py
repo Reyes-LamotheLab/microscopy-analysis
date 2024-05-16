@@ -514,7 +514,7 @@ def integrated_intensity(folder_integrated):
     plt.savefig(str(results_folder_path)+"/"+'IntDen_violinplot.pdf', format='pdf')
 
 
-def particle_distance_against_cell_size(filename, channel):
+def particle_distance_against_cell_size(filename, channel, pixel_size):
     global results_folder_path
 
     csv_files = glob.glob(os.path.join(results_folder_path, '*.csv'))
@@ -531,14 +531,18 @@ def particle_distance_against_cell_size(filename, channel):
 
     #the number of particles per cell serves as the color of the points except when the number of particles is 0, then ignore the point
     big_df = big_df[big_df['total_count'] != 0]
-    plt.scatter(big_df['cell_length'], big_df['Distance_from_center'], c=big_df['total_count'], cmap='viridis', s=7)
+    plt.scatter(big_df['cell_length'] *  pixel_size, big_df['Distance_from_center'] * pixel_size, c=big_df['total_count'], cmap='viridis', s=10)
     
     #plot two lines to show the cell size considering we want to have the cell length dividec by two and plot it from the center of the cell
     cell_size = big_df['cell_length']
     half_cell_size = cell_size/2
+
+    cell_size_microns= cell_size*pixel_size 
+    half_cell_size_microns= half_cell_size*pixel_size
+
    
-    plt.plot(cell_size , half_cell_size, color='red', linestyle='-', linewidth=0.5)
-    plt.plot(cell_size , -half_cell_size, color='red', linestyle='-', linewidth=0.5)
+    plt.plot(cell_size_microns , half_cell_size_microns, color='red', linestyle='-', linewidth=0.5)
+    plt.plot(cell_size_microns , -half_cell_size_microns, color='red', linestyle='-', linewidth=0.5)
 
     plt.colorbar(label='Number of particles per cell')
     plt.xlabel('Cell Size')
@@ -1171,7 +1175,7 @@ def main1(directory_seg, directory_res, Coloc_bysize , folder_integrated, parame
 
     integrated_int_histogram("First_channel", color_channel1) # histogram for integrated intensity
     integrated_int_histogram("Second_channel", color_channel2)   # histogram for integrated intensity
-    particle_distance_against_cell_size("First_channel", color_channel1) # scatter plot for particle distance against cell size
+    particle_distance_against_cell_size("First_channel", color_channel1, pixel) # scatter plot for particle distance against cell size
    
     if channel == 1:
         print("First channel")
@@ -1286,4 +1290,4 @@ def main2(directory_seg, directory_res, folder_integrated, parameters, selected_
     distance_histogram(dist2, total_1, channel=1, axis='axis')
 
     integrated_int_histogram('table', color_channel1)   #input channel 1
-    particle_distance_against_cell_size('table', color_channel1) # scatter plot for particle distance against cell size
+    particle_distance_against_cell_size('table', color_channel1, pixel) # scatter plot for particle distance against cell size
