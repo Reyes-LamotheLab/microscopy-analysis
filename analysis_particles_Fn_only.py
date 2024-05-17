@@ -531,8 +531,39 @@ def particle_distance_against_cell_size(filename, channel, pixel_size):
 
     #the number of particles per cell serves as the color of the points except when the number of particles is 0, then ignore the point
     big_df = big_df[big_df['total_count'] != 0]
+
+    # For the same cell id, if there is one particle only in total_count column, put the distance in a negative value 
+
+    #big_df['Distance_from_center'] = big_df['Distance_from_center'].where(big_df['total_count'] == 1, -big_df['Distance_from_center'])
+    print(big_df[['total_count', 'Distance_from_center']].head())
+
+
+    # Apply the condition to negate Distance_from_center where total_count is 1 and it's not already negative
+    big_df['Distance_from_center'] = np.where(
+        (big_df['total_count'] == 1) & (big_df['Distance_from_center'] > 0),
+        -big_df['Distance_from_center'],
+        big_df['Distance_from_center']
+    )
+
+    print(big_df[['total_count', 'Distance_from_center']].head())
+
+    # Determine the maximum 'Distance_from_center' for each 'cell_id'
+    max_distance = big_df.groupby('cell_id')['Distance_from_center'].transform('max')
+
+    # Apply the conditions using np.where
+    big_df['Distance_from_center'] = np.where(
+        big_df['total_count'] > 1,
+        big_df['Distance_from_center'],  # Keep the value unchanged
+        np.where(
+            (big_df['Distance_from_center'] == max_distance) & (big_df['Distance_from_center'] > 0),
+            -big_df['Distance_from_center'],  # Negate the value if it's the maximum and positive
+            big_df['Distance_from_center']    # Keep the value unchanged
+        )
+    )
     plt.scatter(big_df['cell_length'] *  pixel_size, big_df['Distance_from_center'] * pixel_size, c=big_df['total_count'], cmap='viridis', s=10)
-    
+
+    #plot the color legend for the number of particles per cell
+        
     #plot two lines to show the cell size considering we want to have the cell length dividec by two and plot it from the center of the cell
     cell_size = big_df['cell_length']
     half_cell_size = cell_size/2
@@ -993,7 +1024,7 @@ def main1(directory_seg, directory_res, Coloc_bysize , folder_integrated, parame
     for filename in sorted(os.listdir(directory_seg)):
 
         if not filename.endswith(".DS_Store") and not filename.startswith("._"):
-            print(filename)
+            #print(filename)
             seg_file = os.path.join(directory_seg, filename)
             seg_masks = np.load(seg_file, allow_pickle=True).item()
             #masks = seg_masks['masks']
@@ -1196,7 +1227,7 @@ def main2(directory_seg, directory_res, folder_integrated, parameters, selected_
     global results_folder_path
     results_folder_path=selected_folder_path
     global number_of_cells
-    bin_edges = [0, 100, 200, 300, 400, 500, 600]
+    bin_edges = [0, 100, 200, 300, 400, 500, 600] # not used
 
     pixel = parameters['pixel_size']
     too_small = parameters['min_cell_size']  # this is in pixel length  

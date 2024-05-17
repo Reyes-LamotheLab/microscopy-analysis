@@ -1,7 +1,7 @@
 [path]
-segmentation = "/Users/ceciliaacosta/Desktop/Rodrigo Lab Data/Npy"
-particles = "/Users/ceciliaacosta/Desktop/Rodrigo Lab Data/Particules"
-output_folder = "/Users/ceciliaacosta/Desktop/Rodrigo Lab Data/results"
+segmentation = "/Users/ceciliaacosta/Desktop/Rodrigo Lab Data/Pablo_no_coloc/seg"
+particles = "/Users/ceciliaacosta/Desktop/Rodrigo Lab Data/Pablo_no_coloc/particles_result"
+output_folder = "/Users/ceciliaacosta/Desktop/Rodrigo Lab Data/Pablo_no_coloc/results"
 other =""
 
 [coloc]
