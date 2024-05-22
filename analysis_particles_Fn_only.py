@@ -785,10 +785,6 @@ def table_creation(data, header, outlines, size, min, bin_edges):
 
             nanometer = size * cell_len  # cell_length in pixels, size= pixel size in nanometers
 
-            for i, edge in enumerate(bin_edges):
-                if nanometer <= edge:
-                    bins[i].append(count)
-                    break
 
             if nanometer < bin1:
                 one.append(count)
@@ -980,7 +976,7 @@ def main1(directory_seg, directory_res, Coloc_bysize , folder_integrated, parame
     - channel: Which channel is the colocalization analysis for.
     - selected_folder_path: The path of the results folder.
     """
-    bin_edges=[]
+    bin_edges = [0, 100, 200, 300, 400, 500, 600] # not used
 
     global results_folder_path
     global number_of_cells
