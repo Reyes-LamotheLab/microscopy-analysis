@@ -1004,7 +1004,7 @@ def main1(directory_seg, directory_res, Coloc_bysize , folder_integrated, parame
     total_1 = np.empty(0)
     total_2 = np.empty(0)
 
-# ------ Variables to make the histogram for particles per cell size------------------------------------------------------------------------------------------------------------------
+# ------ Variables to make the histogram for les per cell size------------------------------------------------------------------------------------------------------------------
 
     tot_1, tot_2, tot_3, tot_4, tot_5, tot_6, tot_1_2, tot_2_2, tot_3_2, tot_4_2, tot_5_2, tot_6_2 = [np.empty(0) for i in range(12)]
 
@@ -1160,7 +1160,7 @@ def main1(directory_seg, directory_res, Coloc_bysize , folder_integrated, parame
             for key in new_dict.keys():  # iterate through the different distances of colocalization
                 inco = copy.deepcopy(coloc)
                 othco = copy.deepcopy(coloc2)
-                res = size_colocalization(inco, othco, key, df1, size=pixel)
+                res = size_colocalization(inco, othco, key, df1, size=pixel, bin_edges=bin_edges)
                 res = np.array(res)
                 dict_size[key].append(res) # add the result to the dictionary of the colocalization rate per cell size
 
